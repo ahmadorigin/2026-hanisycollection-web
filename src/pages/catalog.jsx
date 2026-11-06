@@ -1,129 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState,useEffect,useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
 import ProductModal from "../components/ProductModal";
-import { Search } from "lucide-react";
+import { Search,RefreshCw } from "lucide-react";
 
-export default function Catalog() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState("Semua");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      // Fetch Categories
-      const { data: cats } = await supabase.from("categories").select("*");
-      if (cats) setCategories(cats);
-
-      // Fetch Products (termasuk detail images)
-      const { data: prods } = await supabase
-        .from("products")
-        .select(
-          `
-          *,
-          categories (name),
-          product_detail_images (*)
-        `,
-        )
-        .order("created_at", { ascending: false });
-
-      if (prods) setProducts(prods);
-      setLoading(false);
-    };
-
-    fetchData();
-  }, []);
-
-  // Filter Logic
-  const filteredProducts = products.filter((p) => {
-    const matchCategory =
-      activeCategory === "Semua" || p.categories?.name === activeCategory;
-    const matchSearch = p.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    return matchCategory && matchSearch;
-  });
-
-  return (
-    <div className="bg-brand-bg min-h-screen py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header & Search */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <h1 className="text-3xl font-bold text-brand-text">
-            Katalog Koleksi
-          </h1>
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Cari produk..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary bg-white"
-            />
-          </div>
-        </div>
-
-        {/* Category Filter */}
-        <div className="flex overflow-x-auto pb-4 mb-8 gap-2 hide-scrollbar">
-          <button
-            onClick={() => setActiveCategory("Semua")}
-            className={`px-6 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${activeCategory === "Semua" ? "bg-brand-primary text-white" : "bg-white text-brand-text border border-gray-200 hover:border-brand-primary"}`}
-          >
-            Semua
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.name)}
-              className={`px-6 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${activeCategory === cat.name ? "bg-brand-primary text-white" : "bg-white text-brand-text border border-gray-200 hover:border-brand-primary"}`}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Product Grid */}
-        {loading ? (
-          <div className="text-center py-20 text-brand-muted">
-            Memuat katalog...
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-20 text-brand-muted">
-            Tidak ada produk yang ditemukan.
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={{
-                  ...product,
-                  detail_images: product.product_detail_images, // mapping untuk modal
-                }}
-                onClick={() =>
-                  setSelectedProduct({
-                    ...product,
-                    detail_images: product.product_detail_images,
-                  })
-                }
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Modal */}
-      {selectedProduct && (
-        <ProductModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
-    </div>
-  );
+export default function Catalog(){
+ const [products,setProducts]=useState([]),[categories,setCategories]=useState([]),[activeCategory,setActiveCategory]=useState("Semua"),[search,setSearch]=useState(""),[page,setPage]=useState(1),[loading,setLoading]=useState(true),[error,setError]=useState(""),[selected,setSelected]=useState(null);
+ const load=async()=>{setLoading(true);setError("");try{const [c,p]=await Promise.all([supabase.from("categories").select("*").order("name"),supabase.from("products").select("*,categories(name),product_detail_images(*)").order("created_at",{ascending:false})]);if(c.error)throw c.error;if(p.error)throw p.error;setCategories(c.data||[]);setProducts((p.data||[]).map(x=>({...x,detail_images:x.product_detail_images||[]})));}catch(e){setError(e.message||"Katalog belum dapat dimuat.");}finally{setLoading(false)}};
+ useEffect(()=>{load()},[]);
+ const filtered=useMemo(()=>products.filter(p=>(activeCategory==="Semua"||p.categories?.name===activeCategory)&&(`${p.name||""} ${p.categories?.name||""}`.toLowerCase().includes(search.toLowerCase()))),[products,activeCategory,search]);
+ const pages=Math.max(1,Math.ceil(filtered.length/12));const visible=filtered.slice((page-1)*12,page*12);
+ useEffect(()=>setPage(1),[activeCategory,search]);
+ return <section className="min-h-[70vh] bg-[#fbf8f9] px-5 py-14"><div className="mx-auto max-w-7xl"><div className="text-center"><p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">Temukan gayamu</p><h1 className="mt-3 font-serif text-4xl text-[#2d2027] md:text-5xl">Collection</h1><p className="mt-4 text-[#82747b]">Koleksi modest fashion Hanisy dengan sentuhan modern.</p></div>
+ <div className="mx-auto mt-9 max-w-xl"><div className="relative"><Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#a18c96]"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari nama produk atau kategori..." className="w-full rounded-full border border-[#eadde2] bg-white py-3.5 pl-12 pr-5 outline-none focus:border-[#c45b7d]"/></div></div>
+ <div className="mt-6 flex gap-2 overflow-x-auto pb-2">{["Semua",...categories.map(c=>c.name)].map(c=><button key={c} onClick={()=>setActiveCategory(c)} className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-medium transition ${activeCategory===c?"bg-[#b64d70] text-white":"border border-[#eadde2] bg-white text-[#65545d] hover:border-[#c45b7d]"}`}>{c}</button>)}</div>
+ {loading?<div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">{Array.from({length:8},(_,i)=><div key={i} className="animate-pulse"><div className="aspect-[3/4] rounded-2xl bg-[#eee4e8]"/><div className="mt-3 h-4 w-3/4 rounded bg-[#eee4e8]"/><div className="mt-2 h-4 w-1/2 rounded bg-[#eee4e8]"/></div>)}</div>:error?<div className="py-20 text-center"><p className="text-[#75666d]">{error}</p><button onClick={load} className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#b64d70] px-6 py-3 text-white"><RefreshCw size={16}/> Coba Lagi</button></div>:visible.length===0?<div className="py-20 text-center"><h2 className="font-serif text-2xl text-[#30232a]">Koleksi sedang dipersiapkan</h2><p className="mt-2 text-[#82747b]">Coba kata kunci lain atau kembali lagi nanti.</p></div>:<><div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 md:gap-6">{visible.map(p=><ProductCard key={p.id} product={p} onClick={()=>setSelected(p)}/>)}</div><div className="mt-10 flex items-center justify-center gap-4"><button disabled={page===1} onClick={()=>setPage(p=>p-1)} className="rounded-full border border-[#eadde2] px-5 py-2 disabled:opacity-40">Sebelumnya</button><span className="text-sm text-[#75666d]">Halaman {page} dari {pages}</span><button disabled={page===pages} onClick={()=>setPage(p=>p+1)} className="rounded-full border border-[#eadde2] px-5 py-2 disabled:opacity-40">Berikutnya</button></div></>}
+ </div>{selected&&<ProductModal product={selected} onClose={()=>setSelected(null)}/>}</section>
 }

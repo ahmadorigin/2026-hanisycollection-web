@@ -1,42 +1,38 @@
-import { useState, useEffect } from "react";
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Link,
-  NavLink,
-  Outlet,
-  Navigate,
-} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Menu, X, MessageCircle } from "lucide-react";
-import { AuthProvider } from "./contexts/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import Home from "./pages/home";
-import Catalog from "./pages/catalog";
-import About from "./pages/about";
-import Contact from "./pages/contact";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/admin/Login";
-import AdminLayout from "./pages/admin/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard";
-import ProductForm from "./pages/admin/ProductForm";
+
+const links = [
+  ["Beranda", "/"],
+  ["Collection", "/collection"],
+  ["About", "/about"],
+  ["Contact", "/contact"],
+];
 
 function PublicLayout() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 24);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const links = [
-    ["Beranda", "/"],
-    ["Collection", "/collection"],
-    ["About", "/about"],
-    ["Contact", "/contact"],
-  ];
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white text-[#30232a]">
@@ -84,27 +80,46 @@ function PublicLayout() {
             type="button"
             aria-label={open ? "Tutup menu" : "Buka menu"}
             aria-expanded={open}
+            aria-controls="public-mobile-menu"
             onClick={() => setOpen((value) => !value)}
             className="rounded-full p-2 md:hidden"
           >
-            {open ? <X /> : <Menu />}
+            <span className="block transition-transform duration-200">
+              {open ? <X /> : <Menu />}
+            </span>
           </button>
         </div>
 
-        {open && (
-          <nav className="grid gap-1 border-t border-[#f0e4e8] bg-white px-5 py-4 md:hidden">
-            {links.map(([label, path]) => (
+        <nav
+          id="public-mobile-menu"
+          aria-hidden={!open}
+          className={`overflow-hidden border-t border-[#f0e4e8] bg-white px-5 transition-[max-height,opacity,padding] duration-300 ease-in-out md:hidden ${
+            open
+              ? "max-h-72 py-4 opacity-100"
+              : "max-h-0 border-t-0 py-0 opacity-0"
+          }`}
+        >
+          <div className="grid gap-1">
+            {links.map(([label, path], index) => (
               <Link
                 key={path}
+                tabIndex={open ? 0 : -1}
                 to={path}
                 onClick={() => setOpen(false)}
-                className="rounded-xl px-4 py-3 hover:bg-[#fbf2f5]"
+                style={{
+                  transitionDelay: open ? `${index * 45}ms` : "0ms",
+                }}
+                className={`rounded-xl px-4 py-3 transition-all duration-200 hover:bg-[#fbf2f5] ${
+                  open
+                    ? "translate-y-0 opacity-100"
+                    : "-translate-y-2 opacity-0"
+                }`}
               >
                 {label}
               </Link>
             ))}
-          </nav>
-        )}
+          </div>
+        </nav>
       </header>
 
       <main>
@@ -153,35 +168,4 @@ function PublicLayout() {
   );
 }
 
-export default function App() {
-  return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<PublicLayout />}>
-            <Route index element={<Home />} />
-            <Route path="collection" element={<Catalog />} />
-            <Route path="catalog" element={<Catalog />} />
-            <Route path="about" element={<About />} />
-            <Route path="contact" element={<Contact />} />
-            <Route
-              path="testimonial"
-              element={<Navigate to="/#testimonials" replace />}
-            />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-
-          <Route path="/admin/login" element={<Login />} />
-
-          <Route element={<ProtectedRoute />}>
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="products/new" element={<ProductForm />} />
-              <Route path="products/edit/:id" element={<ProductForm />} />
-            </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
-  );
-}
+export default PublicLayout;

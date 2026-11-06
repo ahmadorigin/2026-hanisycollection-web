@@ -1,67 +1,19 @@
+import { useEffect,useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, HeartHandshake } from "lucide-react";
+import { ArrowRight, Heart, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { supabase } from "../lib/supabaseClient";
+import ProductCard from "../components/ProductCard";
+import ProductModal from "../components/ProductModal";
 import { generateCustomWALink } from "../lib/utils";
 
-export default function Home() {
-  return (
-    <div className="bg-brand-bg min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 flex flex-col items-center text-center">
-          <span className="text-brand-primary font-semibold tracking-wider uppercase text-sm mb-4">
-            Koleksi Eksklusif
-          </span>
-          <h1 className="text-4xl md:text-6xl font-bold text-brand-text leading-tight mb-6 max-w-3xl">
-            Keanggunan dalam Balutan{" "}
-            <span className="text-brand-primary">Hanbok</span> untuk Si Kecil
-          </h1>
-          <p className="text-brand-muted text-lg mb-10 max-w-2xl">
-            Dibuat dengan tangan dan penuh cinta oleh penjahit lokal.
-            Menghadirkan kenyamanan, keamanan, dan gaya untuk buah hati
-            tercinta.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link
-              to="/catalog"
-              className="flex items-center justify-center gap-2 bg-brand-primary text-white px-8 py-4 rounded-full font-semibold hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/30"
-            >
-              Lihat Katalog
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <a
-              href={generateCustomWALink()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 bg-white text-brand-text border-2 border-gray-200 px-8 py-4 rounded-full font-semibold hover:border-brand-primary hover:text-brand-primary transition-colors"
-            >
-              <HeartHandshake className="w-5 h-5" />
-              Konsultasi Custom Order
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* Banner Family Set / Custom */}
-      <section className="py-20 bg-brand-secondary">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-brand-text mb-4">
-            Family Set & Custom Request
-          </h2>
-          <p className="text-brand-text/80 mb-8 max-w-2xl mx-auto">
-            Ingin matching outfit dengan si kecil? Atau butuh gamis, outer, atau
-            bawahan custom? Kami menerima pesanan khusus (Made to Order) sesuai
-            keinginan Anda.
-          </p>
-          <a
-            href={generateCustomWALink()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-brand-primary text-white px-8 py-3 rounded-full font-semibold hover:bg-brand-primary/90 transition-colors"
-          >
-            Mulai Konsultasi Sekarang
-          </a>
-        </div>
-      </section>
-    </div>
-  );
+export default function Home(){
+ const [products,setProducts]=useState([]),[selected,setSelected]=useState(null);
+ useEffect(()=>{supabase.from("products").select("*,categories(name),product_detail_images(*)").eq("is_featured",true).order("created_at",{ascending:true}).limit(4).then(({data})=>{if(data)setProducts(data.map(p=>({...p,detail_images:p.product_detail_images||[]})))})},[]);
+ return <div className="bg-white">
+ <section className="relative overflow-hidden bg-[#f8edf1]"><div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,#fff9_0,transparent_45%)]"/><div className="relative mx-auto grid max-w-7xl items-center gap-8 px-5 py-16 md:grid-cols-2 md:py-24"><div className="max-w-xl"><p className="text-xs font-semibold uppercase tracking-[.3em] text-[#b64d70]">Modest fashion · Modern elegance</p><h1 className="mt-5 font-serif text-5xl leading-[1.08] text-[#321d29] md:text-7xl">Anggun dalam <span className="italic text-[#b64d70]">kesederhanaan.</span></h1><p className="mt-6 max-w-lg text-base leading-8 text-[#75666d]">Temukan busana modest dengan inspirasi hanbok yang memadukan kesantunan, kenyamanan, dan sentuhan modern.</p><div className="mt-9 flex flex-wrap gap-3"><Link to="/collection" className="inline-flex items-center gap-2 rounded-full bg-[#b64d70] px-7 py-4 font-semibold text-white transition hover:bg-[#963c5c]">Jelajahi Koleksi <ArrowRight size={18}/></Link><a href={generateCustomWALink()} target="_blank" rel="noreferrer" className="rounded-full border border-[#d9b8c4] px-7 py-4 font-semibold text-[#60394a] transition hover:bg-white">Pesan Khusus</a></div></div><div className="relative mx-auto w-full max-w-lg"><div className="absolute -inset-5 rounded-[48%_48%_20%_20%] bg-[#e9cbd6]"/><img src="/images/hanisy-hero.png" alt="Inspirasi modest fashion Hanisy Collection" className="relative aspect-[4/5] w-full rounded-[48%_48%_18%_18%] object-cover shadow-xl" onError={e=>{e.currentTarget.style.display="none"}}/><div className="absolute bottom-5 left-0 rounded-r-2xl bg-white/90 px-5 py-3 font-serif text-lg text-[#61394b]">Elegance in every detail</div></div></div></section>
+ <section className="mx-auto grid max-w-7xl grid-cols-2 gap-3 px-5 py-8 md:grid-cols-4">{[{I:Truck,t:"Pengiriman aman",d:"Pesanan dikemas dengan baik"},{I:ShieldCheck,t:"Layanan terpercaya",d:"Komunikasi jelas dan ramah"},{I:Sparkles,t:"Detail istimewa",d:"Sentuhan khas di setiap koleksi"},{I:Heart,t:"Dibuat dengan perhatian",d:"Nyaman untuk menemani hari"}].map(({I,t,d})=><div key={t} className="flex items-center gap-3 rounded-2xl bg-[#fbf6f8] p-4"><I className="h-6 w-6 shrink-0 text-[#b64d70]"/><div><p className="text-sm font-semibold">{t}</p><p className="mt-1 text-xs text-[#82747b]">{d}</p></div></div>)}</section>
+ <section className="mx-auto max-w-7xl px-5 py-16"><div className="text-center"><p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">Pilihan Hanisy</p><h2 className="mt-3 font-serif text-4xl text-[#2d2027]">Featured Collection</h2><p className="mt-3 text-sm text-[#82747b]">Pilihan koleksi yang kami hadirkan untukmu</p></div>{products.length?<div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">{products.map(p=><ProductCard key={p.id} product={p} onClick={()=>setSelected(p)}/>)}</div>:<div className="mt-10 rounded-3xl bg-[#fbf6f8] p-10 text-center text-sm text-[#82747b]">Koleksi pilihan sedang dipersiapkan.</div>}<div className="mt-10 text-center"><Link to="/collection" className="inline-flex items-center gap-2 border-b border-[#b64d70] pb-2 font-semibold text-[#a44a69]">Lihat Semua Koleksi <ArrowRight size={17}/></Link></div></section>
+ <section className="bg-[#f8edf1] px-5 py-16 text-center"><p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">Tentang Hanisy</p><h2 className="mx-auto mt-3 max-w-2xl font-serif text-4xl text-[#321d29]">Berbusana santun, tetap menjadi diri sendiri</h2><p className="mx-auto mt-5 max-w-xl leading-7 text-[#75666d]">Kami percaya kenyamanan dan keanggunan dapat berjalan beriringan.</p><Link to="/about" className="mt-7 inline-flex rounded-full bg-[#b64d70] px-7 py-3 font-semibold text-white">Kenali Hanisy</Link></section>
+ {selected&&<ProductModal product={selected} onClose={()=>setSelected(null)}/>}
+ </div>
 }

@@ -9,3 +9,11 @@
 
   --font-sans: "Inter", system-ui, sans-serif;
 }
+
+@keyframes hanisy-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[hanisy-marquee_\48 s_linear_infinite\] { animation: none !important; }
+}

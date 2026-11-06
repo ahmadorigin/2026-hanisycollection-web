@@ -11,12 +11,16 @@
 }
 
 @keyframes hanisy-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 .hanisy-marquee-track {
-  animation: hanisy-marquee 48s linear infinite;
+  animation: hanisy-marquee 7s linear infinite;
 }
 
 .group:hover .hanisy-marquee-track,

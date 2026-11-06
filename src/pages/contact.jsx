@@ -1,4 +1,4 @@
-import { University, MessageCircle, Mail, MapPin } from "lucide-react";
+import { Camera, MessageCircle, Mail, MapPin } from "lucide-react";
 import { generateCustomWALink } from "../lib/utils";
 
 const socials = [
@@ -8,9 +8,24 @@ const socials = [
     href: generateCustomWALink(),
     icon: MessageCircle,
   },
-  { label: "Instagram", value: "", href: "", icon: University },
-  { label: "Email", value: "", href: "", icon: Mail },
-  { label: "Alamat", value: "", href: "", icon: MapPin },
+  {
+    label: "Instagram",
+    value: "",
+    href: "",
+    icon: Camera,
+  },
+  {
+    label: "Email",
+    value: "",
+    href: "",
+    icon: Mail,
+  },
+  {
+    label: "Alamat",
+    value: "",
+    href: "",
+    icon: MapPin,
+  },
 ];
 
 export default function Contact() {
@@ -20,13 +35,16 @@ export default function Contact() {
         <p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">
           Hubungi kami
         </p>
+
         <h1 className="mt-3 font-serif text-4xl text-[#271b20] md:text-5xl">
           Kami siap membantu
         </h1>
+
         <p className="mt-5 max-w-2xl leading-8 text-[#75666d]">
           Ada pertanyaan tentang koleksi, ukuran, atau pesanan khusus? Silakan
           hubungi Hanisy Collection melalui kanal yang tersedia.
         </p>
+
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
           {socials
             .filter((s) => s.value || s.href)
@@ -41,6 +59,7 @@ export default function Contact() {
                 <span className="rounded-xl bg-[#f8edf1] p-3 text-[#b64d70]">
                   <Icon className="h-6 w-6" />
                 </span>
+
                 <span>
                   <span className="block font-semibold text-[#30232a]">
                     {label}

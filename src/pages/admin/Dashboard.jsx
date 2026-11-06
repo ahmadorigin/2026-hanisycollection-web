@@ -5,7 +5,7 @@ import { formatRupiah } from "../../lib/utils";
 import { Edit, Trash2, Plus } from "lucide-react";
 
 export default function Dashboard() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState([]);\n  const [categories, setCategories] = useState([]);\n  const [categoryName, setCategoryName] = useState("");\n  const [categoryLoading, setCategoryLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [testimonials,setTestimonials]=useState([]);
   const [testimonialLoading,setTestimonialLoading]=useState(true);
@@ -41,6 +41,26 @@ export default function Dashboard() {
   const saveTestimonial=async(e)=>{e.preventDefault();const payload={customer_name:testimonialForm.customer_name.trim(),customer_origin:testimonialForm.customer_origin.trim(),content:testimonialForm.content.trim()};if(!payload.customer_name||!payload.content)return;const result=editingTestimonial?await supabase.from("testimonials").update(payload).eq("id",editingTestimonial):await supabase.from("testimonials").insert(payload).select().single();if(result.error){alert("Gagal menyimpan testimoni: "+result.error.message);return;}const {data}=await supabase.from("testimonials").select("*").order("created_at",{ascending:false});setTestimonials(data||[]);setEditingTestimonial(null);setTestimonialForm({customer_name:"",customer_origin:"",content:""});};
   const editTestimonial=(item)=>{setEditingTestimonial(item.id);setTestimonialForm({customer_name:item.customer_name||"",customer_origin:item.customer_origin||"",content:item.content||""});};
   const deleteTestimonial=async(id)=>{if(!window.confirm("Hapus testimoni ini?"))return;const {error}=await supabase.from("testimonials").delete().eq("id",id);if(error){alert("Gagal menghapus: "+error.message);return;}setTestimonials(items=>items.filter(item=>item.id!==id));};
+
+  const saveCategory = async (event) => {
+    event.preventDefault();
+    const name = categoryName.trim();
+    if (!name) return;
+    setCategoryLoading(true);
+    const { data, error } = await supabase.from("categories").insert({ name }).select().single();
+    if (error) alert("Gagal menambah kategori: " + error.message);
+    else { setCategories(items => [...items, data].sort((a,b)=>a.name.localeCompare(b.name))); setCategoryName(""); }
+    setCategoryLoading(false);
+  };
+
+  const deleteCategory = async (category) => {
+    const assigned = products.some(product => product.category_id === category.id);
+    if (assigned) return alert("Kategori ini masih digunakan produk. Pindahkan produk ke kategori lain sebelum menghapusnya.");
+    if (!window.confirm(`Hapus kategori "${category.name}"?`)) return;
+    const { error } = await supabase.from("categories").delete().eq("id", category.id);
+    if (error) alert("Gagal menghapus kategori: " + error.message);
+    else setCategories(items => items.filter(item => item.id !== category.id));
+  };
 
   const getStatusBadge = (status, stock) => {
     if (status === "ready_stock") {

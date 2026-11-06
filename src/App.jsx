@@ -7,7 +7,6 @@ import Home from "./pages/home";
 import Catalog from "./pages/catalog";
 import About from "./pages/about";
 import Contact from "./pages/contact";
-import Testimonial from "./pages/testimonial";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/admin/Login";
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -18,7 +17,7 @@ function PublicLayout(){
  const [open,setOpen]=useState(false); const [scrolled,setScrolled]=useState(false); const location=useLocation();
  useEffect(()=>{const fn=()=>setScrolled(window.scrollY>24);window.addEventListener("scroll",fn);return()=>window.removeEventListener("scroll",fn)},[]);
  useEffect(()=>setOpen(false),[location.pathname]);
- const links=[["Beranda","/"],["Collection","/collection"],["About","/about"],["Testimonial","/testimonial"],["Contact","/contact"]];
+ const links=[["Beranda","/"],["Collection","/collection"],["About","/about"],["Testimonial","/#testimonials"],["Contact","/contact"]];
  return <div className="min-h-screen bg-white text-[#30232a]">
  <header className={`sticky top-0 z-40 border-b transition-all ${scrolled?"border-black/5 bg-white/95 shadow-sm backdrop-blur":"border-white/20 bg-white"}`}>
  <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5">

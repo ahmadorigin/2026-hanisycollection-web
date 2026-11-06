@@ -5,7 +5,10 @@ import { formatRupiah } from "../../lib/utils";
 import { Edit, Trash2, Plus } from "lucide-react";
 
 export default function Dashboard() {
-  const [products, setProducts] = useState([]);\n  const [categories, setCategories] = useState([]);\n  const [categoryName, setCategoryName] = useState("");\n  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryLoading, setCategoryLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [testimonials,setTestimonials]=useState([]);
   const [testimonialLoading,setTestimonialLoading]=useState(true);

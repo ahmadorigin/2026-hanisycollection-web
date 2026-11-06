@@ -6,6 +6,9 @@ import { Edit, Trash2, Plus } from "lucide-react";
 
 export default function Dashboard() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryLoading, setCategoryLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [testimonials,setTestimonials]=useState([]);
   const [testimonialLoading,setTestimonialLoading]=useState(true);
@@ -19,6 +22,8 @@ export default function Dashboard() {
         .select(`*, categories(name)`)
         .order("created_at", { ascending: false });
       if (data) setProducts(data);
+      const { data: categoryRows } = await supabase.from("categories").select("*").order("name");
+      setCategories(categoryRows || []);
       setLoading(false);
       const {data:reviews}=await supabase.from("testimonials").select("*").order("created_at",{ascending:false});
       setTestimonials(reviews||[]);setTestimonialLoading(false);
@@ -30,17 +35,42 @@ export default function Dashboard() {
   const handleDelete = async (id) => {
     if (!window.confirm("Yakin ingin menghapus produk ini?")) return;
 
+    const { data: productFiles } = await supabase.from("products").select("main_image_url, product_detail_images(image_url)").eq("id", id).single();
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
       alert("Gagal menghapus: " + error.message);
     } else {
       setProducts(products.filter((product) => product.id !== id));
+      const urls = [productFiles?.main_image_url, ...(productFiles?.product_detail_images || []).map(image => image.image_url)].filter(Boolean);
+      const marker = "/storage/v1/object/public/product-images/";
+      const paths = [...new Set(urls.map(url => { const at = url.indexOf(marker); return at < 0 ? null : decodeURIComponent(url.slice(at + marker.length).split("?")[0]); }).filter(Boolean))];
+      if (paths.length) { const { error: storageError } = await supabase.storage.from("product-images").remove(paths); if (storageError) alert("Produk terhapus, tetapi sebagian foto gagal dibersihkan dari Storage: " + storageError.message); }
     }
   };
 
   const saveTestimonial=async(e)=>{e.preventDefault();const payload={customer_name:testimonialForm.customer_name.trim(),customer_origin:testimonialForm.customer_origin.trim(),content:testimonialForm.content.trim()};if(!payload.customer_name||!payload.content)return;const result=editingTestimonial?await supabase.from("testimonials").update(payload).eq("id",editingTestimonial):await supabase.from("testimonials").insert(payload).select().single();if(result.error){alert("Gagal menyimpan testimoni: "+result.error.message);return;}const {data}=await supabase.from("testimonials").select("*").order("created_at",{ascending:false});setTestimonials(data||[]);setEditingTestimonial(null);setTestimonialForm({customer_name:"",customer_origin:"",content:""});};
   const editTestimonial=(item)=>{setEditingTestimonial(item.id);setTestimonialForm({customer_name:item.customer_name||"",customer_origin:item.customer_origin||"",content:item.content||""});};
   const deleteTestimonial=async(id)=>{if(!window.confirm("Hapus testimoni ini?"))return;const {error}=await supabase.from("testimonials").delete().eq("id",id);if(error){alert("Gagal menghapus: "+error.message);return;}setTestimonials(items=>items.filter(item=>item.id!==id));};
+
+  const saveCategory = async (event) => {
+    event.preventDefault();
+    const name = categoryName.trim();
+    if (!name) return;
+    setCategoryLoading(true);
+    const { data, error } = await supabase.from("categories").insert({ name }).select().single();
+    if (error) alert("Gagal menambah kategori: " + error.message);
+    else { setCategories(items => [...items, data].sort((a,b)=>a.name.localeCompare(b.name))); setCategoryName(""); }
+    setCategoryLoading(false);
+  };
+
+  const deleteCategory = async (category) => {
+    const assigned = products.some(product => product.category_id === category.id);
+    if (assigned) return alert("Kategori ini masih digunakan produk. Pindahkan produk ke kategori lain sebelum menghapusnya.");
+    if (!window.confirm(`Hapus kategori "${category.name}"?`)) return;
+    const { error } = await supabase.from("categories").delete().eq("id", category.id);
+    if (error) alert("Gagal menghapus kategori: " + error.message);
+    else setCategories(items => items.filter(item => item.id !== category.id));
+  };
 
   const getStatusBadge = (status, stock) => {
     if (status === "ready_stock") {
@@ -149,6 +179,14 @@ export default function Dashboard() {
           </table>
         </div>
       </div>
+
+      <section className="mt-12">
+        <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#b64d70]">Pengaturan katalog</p><h2 className="mt-1 text-2xl font-bold text-brand-text">Kategori Produk</h2><p className="mt-1 text-sm text-brand-muted">Kategori yang masih dipakai produk tidak dapat dihapus.</p></div>
+        <div className="grid gap-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm md:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex flex-wrap content-start gap-2">{categories.map(category=><div key={category.id} className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm"><span>{category.name}</span><button type="button" onClick={()=>deleteCategory(category)} aria-label={`Hapus kategori ${category.name}`} className="text-red-500 hover:text-red-700">×</button></div>)}{categories.length===0&&<p className="text-sm text-brand-muted">Belum ada kategori.</p>}</div>
+          <form onSubmit={saveCategory} className="flex items-center gap-2"><input required maxLength={60} value={categoryName} onChange={e=>setCategoryName(e.target.value)} placeholder="Nama kategori baru" className="min-w-0 grow rounded-xl border border-gray-200 px-3 py-2.5 text-sm"/><button disabled={categoryLoading} className="rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{categoryLoading?"Menyimpan...":"Tambah"}</button></form>
+        </div>
+      </section>
 
       <section className="mt-12">
         <div className="mb-5"><p className="text-xs font-semibold uppercase tracking-[.2em] text-[#b64d70]">Konten Beranda</p><h2 className="mt-1 text-2xl font-bold text-brand-text">Testimoni Pelanggan</h2><p className="mt-1 text-sm text-brand-muted">Testimoni di sini akan tampil sebagai card berjalan perlahan di halaman Home.</p></div>

@@ -6,6 +6,8 @@ import {
   Link,
   NavLink,
   Outlet,
+  useLocation,
+  Navigate,
 } from "react-router-dom";
 import { Menu, X, MessageCircle } from "lucide-react";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -23,6 +25,7 @@ import ProductForm from "./pages/admin/ProductForm";
 function PublicLayout() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 24);
@@ -30,19 +33,26 @@ function PublicLayout() {
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
+  useEffect(() => setOpen(false), [location.pathname]);
+
   const links = [
     ["Beranda", "/"],
     ["Collection", "/collection"],
     ["About", "/about"],
+    ["Testimonial", "/#testimonials"],
     ["Contact", "/contact"],
   ];
 
   return (
     <div className="min-h-screen bg-white text-[#30232a]">
       <header
-        className={`sticky top-0 z-40 border-b transition-all ${scrolled ? "border-black/5 bg-white/95 shadow-sm backdrop-blur" : "border-white/20 bg-white"}`}
+        className={`sticky top-0 z-40 border-b transition-all ${
+          scrolled
+            ? "border-black/5 bg-white/95 shadow-sm backdrop-blur"
+            : "border-white/20 bg-white"
+        }`}
       >
-        <div className="mx-auto flex h-19 max-w-7xl items-center justify-between px-5">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5">
           <Link
             to="/"
             className="font-serif text-2xl leading-none tracking-tight text-[#301b26]"
@@ -52,6 +62,7 @@ function PublicLayout() {
               COLLECTION
             </span>
           </Link>
+
           <nav className="hidden items-center gap-8 md:flex">
             {links.map(([label, path]) => (
               <NavLink
@@ -59,21 +70,25 @@ function PublicLayout() {
                 to={path}
                 end={path === "/"}
                 className={({ isActive }) =>
-                  `text-sm transition hover:text-[#b64d70] ${isActive ? "font-semibold text-[#b64d70]" : "text-[#40343a]"}`
+                  `text-sm transition hover:text-[#b64d70] ${
+                    isActive ? "font-semibold text-[#b64d70]" : "text-[#40343a]"
+                  }`
                 }
               >
                 {label}
               </NavLink>
             ))}
           </nav>
+
           <button
             aria-label="Buka menu"
-            onClick={() => setOpen(false)}
+            onClick={() => setOpen((v) => !v)}
             className="rounded-full p-2 md:hidden"
           >
             {open ? <X /> : <Menu />}
           </button>
         </div>
+
         {open && (
           <nav className="grid gap-1 border-t border-[#f0e4e8] bg-white px-5 py-4 md:hidden">
             {links.map(([label, path]) => (
@@ -88,9 +103,11 @@ function PublicLayout() {
           </nav>
         )}
       </header>
+
       <main>
         <Outlet />
       </main>
+
       <footer className="bg-[#21191e] px-5 py-12 text-white">
         <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-3">
           <div>
@@ -100,16 +117,18 @@ function PublicLayout() {
               keseharian.
             </p>
           </div>
+
           <div>
             <p className="font-semibold">Jelajahi</p>
             <div className="mt-4 grid gap-2 text-sm text-white/70">
-              {links.map(([l, p]) => (
-                <Link key={p} to={p} className="hover:text-white">
-                  {l}
+              {links.map(([label, path]) => (
+                <Link key={path} to={path} className="hover:text-white">
+                  {label}
                 </Link>
               ))}
             </div>
           </div>
+
           <div>
             <p className="font-semibold">Ikuti perjalanan kami</p>
             <a
@@ -122,6 +141,7 @@ function PublicLayout() {
             </a>
           </div>
         </div>
+
         <div className="mx-auto mt-10 max-w-7xl border-t border-white/10 pt-6 text-xs text-white/45">
           © {new Date().getFullYear()} Hanisy Collection. Hak cipta dilindungi.
         </div>
@@ -129,6 +149,7 @@ function PublicLayout() {
     </div>
   );
 }
+
 export default function App() {
   return (
     <AuthProvider>
@@ -140,9 +161,15 @@ export default function App() {
             <Route path="catalog" element={<Catalog />} />
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
+            <Route
+              path="testimonial"
+              element={<Navigate to="/#testimonials" replace />}
+            />
             <Route path="*" element={<NotFound />} />
           </Route>
+
           <Route path="/admin/login" element={<Login />} />
+
           <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />

@@ -1,143 +1,135 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { uploadImage } from "../../lib/uploadImage";
 import { Plus, X, Image as ImageIcon } from "lucide-react";
 
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function storagePathFromPublicUrl(url) {
+  if (!url) return null;
+  const marker = "/storage/v1/object/public/product-images/";
+  const index = url.indexOf(marker);
+  return index < 0 ? null : decodeURIComponent(url.slice(index + marker.length).split("?")[0]);
+}
+
+async function removeStoredImages(urls) {
+  const paths = [...new Set(urls.map(storagePathFromPublicUrl).filter(Boolean))];
+  if (!paths.length) return;
+  const { error } = await supabase.storage.from("product-images").remove(paths);
+  if (error) console.error("Gagal membersihkan foto lama:", error.message);
+}
+
 export default function ProductForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(isEdit);
   const [categories, setCategories] = useState([]);
-
-  // State Form
   const [formData, setFormData] = useState({
-    name: "",
-    category_id: "",
-    price: "",
-    description: "",
-    status: "ready_stock",
-    stock: 0,
-    sizes: [],
-    colors: [],
-    is_featured: false,
+    name: "", category_id: "", price: "", description: "",
+    status: "ready_stock", stock: 0, sizes: [], colors: [], is_featured: false,
   });
-
-  // State untuk Varian Input Sementara
   const [sizeInput, setSizeInput] = useState("");
   const [colorInput, setColorInput] = useState("");
-
-  // State untuk Gambar
   const [mainImageFile, setMainImageFile] = useState(null);
   const [existingMainImage, setExistingMainImage] = useState("");
-
-  // State untuk Detail Foto (Maks 4)
-  const [details, setDetails] = useState([]); // Array of { id?, file?, image_url?, caption? }
+  const [details, setDetails] = useState([]);
+  const [originalDetailUrls, setOriginalDetailUrls] = useState([]);
+  const [originalDetailRows, setOriginalDetailRows] = useState([]);
 
   useEffect(() => {
-    async function fetchCategories() {
-      const { data } = await supabase.from("categories").select("*");
-      if (data) setCategories(data);
-    }
-
-    async function fetchProductData() {
-      setLoading(true);
-      const { data } = await supabase
-        .from("products")
-        .select(`*, product_detail_images(*)`)
-        .eq("id", id)
-        .single();
-
-      if (data) {
-        setFormData({
-          name: data.name,
-          category_id: data.category_id,
-          price: data.price,
-          description: data.description || "",
-          status: data.status,
-          stock: data.stock,
-          sizes: data.sizes || [],
-          colors: data.colors || [],
-          is_featured: data.is_featured || false,
-        });
-        setExistingMainImage(data.main_image_url);
-        setDetails(data.product_detail_images || []);
+    let active = true;
+    async function load() {
+      const categoryResult = await supabase.from("categories").select("*").order("name");
+      if (!active) return;
+      if (categoryResult.error) alert("Gagal memuat kategori: " + categoryResult.error.message);
+      setCategories(categoryResult.data || []);
+      if (isEdit) {
+        const { data, error } = await supabase.from("products")
+          .select("*, product_detail_images(*)").eq("id", id).single();
+        if (!active) return;
+        if (error) alert("Gagal memuat produk: " + error.message);
+        if (data) {
+          setFormData({
+            name: data.name || "", category_id: data.category_id || "",
+            price: data.price ?? "", description: data.description || "",
+            status: data.status || "ready_stock", stock: data.stock ?? 0,
+            sizes: data.sizes || [], colors: data.colors || [],
+            is_featured: Boolean(data.is_featured),
+          });
+          setExistingMainImage(data.main_image_url || "");
+          const loadedDetails = (data.product_detail_images || []).sort((a,b)=>(a.position||0)-(b.position||0)).slice(0,4);
+          setDetails(loadedDetails);
+          setOriginalDetailUrls(loadedDetails.map(item => item.image_url).filter(Boolean));
+          setOriginalDetailRows(loadedDetails);
+        }
       }
-      setLoading(false);
+      if (active) setPageLoading(false);
     }
-
-    fetchCategories();
-    if (isEdit) fetchProductData();
+    load();
+    return () => { active = false; };
   }, [id, isEdit]);
 
-  // Handlers Varian
-  const addSize = () => {
-    if (sizeInput && !formData.sizes.includes(sizeInput)) {
-      setFormData({ ...formData, sizes: [...formData.sizes, sizeInput] });
-      setSizeInput("");
+  const addVariant = (field, value, clear) => {
+    const clean = value.trim();
+    if (clean && !formData[field].includes(clean)) {
+      setFormData(current => ({ ...current, [field]: [...current[field], clean] }));
     }
-  };
-  const removeSize = (size) =>
-    setFormData({
-      ...formData,
-      sizes: formData.sizes.filter((s) => s !== size),
-    });
-
-  const addColor = () => {
-    if (colorInput && !formData.colors.includes(colorInput)) {
-      setFormData({ ...formData, colors: [...formData.colors, colorInput] });
-      setColorInput("");
-    }
-  };
-  const removeColor = (color) =>
-    setFormData({
-      ...formData,
-      colors: formData.colors.filter((c) => c !== color),
-    });
-
-  // Handlers Detail Foto
-  const handleAddDetail = () => {
-    if (details.length < 4) {
-      setDetails([...details, { file: null, image_url: "", caption: "" }]);
-    }
-  };
-  const updateDetail = (index, field, value) => {
-    const newDetails = [...details];
-    newDetails[index][field] = value;
-    setDetails(newDetails);
-  };
-  const removeDetail = (index) => {
-    setDetails(details.filter((_, i) => i !== index));
+    clear("");
   };
 
-  // Submit Form
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const validateFile = (file) => {
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) throw new Error("Format foto harus JPG, PNG, atau WebP.");
+    if (file.size > MAX_IMAGE_SIZE) throw new Error("Ukuran setiap foto maksimal 2 MB.");
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!formData.name.trim()) return alert("Nama produk wajib diisi.");
+    if (!formData.category_id) return alert("Silakan pilih kategori.");
+    if (formData.price === "" || Number(formData.price) < 0 || !Number.isFinite(Number(formData.price))) return alert("Masukkan harga yang valid.");
+    if (!isEdit && !mainImageFile) return alert("Foto utama produk wajib diunggah.");
     setLoading(true);
-
+    const newlyUploaded = [];
     try {
-      const allowed = ["image/jpeg", "image/png", "image/webp"];
-      const allFiles = [mainImageFile, ...details.map(d => d.file)].filter(Boolean);
-      for (const file of allFiles) {
-        if (!allowed.includes(file.type)) throw new Error("Format foto harus JPG, PNG, atau WebP.");
-        if (file.size > 2 * 1024 * 1024) throw new Error("Ukuran setiap foto maksimal 2 MB.");
-      }
+      validateFile(mainImageFile);
+      details.forEach(detail => validateFile(detail.file));
+
       let mainImageUrl = existingMainImage;
-      // 1. Upload Foto Utama jika ada file baru
       if (mainImageFile) {
         mainImageUrl = await uploadImage(mainImageFile);
+        newlyUploaded.push(mainImageUrl);
       }
 
-      // 2. Simpan/Update Produk
+      const detailRows = [];
+      const replacedDetailUrls = [];
+      for (let index = 0; index < details.length; index += 1) {
+        const detail = details[index];
+        let imageUrl = detail.image_url || "";
+        if (detail.file) {
+          imageUrl = await uploadImage(detail.file, "details");
+          newlyUploaded.push(imageUrl);
+          if (detail.image_url) replacedDetailUrls.push(detail.image_url);
+        }
+        if (imageUrl) detailRows.push({
+          id: detail.id || null,
+          image_url: imageUrl,
+          caption: (detail.caption || "").trim(),
+          position: index + 1,
+        });
+      }
+
       const productPayload = {
-        name: formData.name,
+        name: formData.name.trim(),
         category_id: formData.category_id,
         price: Number(formData.price),
-        description: formData.description,
+        description: formData.description.trim(),
         status: formData.status,
-        stock: formData.status === "ready_stock" ? Number(formData.stock) : 0,
+        stock: formData.status === "ready_stock" ? Math.max(0, Number(formData.stock) || 0) : 0,
         sizes: formData.sizes,
         colors: formData.colors,
         is_featured: formData.is_featured,
@@ -145,343 +137,106 @@ export default function ProductForm() {
       };
 
       let productId = id;
+      let productError = null;
       if (isEdit) {
-        await supabase.from("products").update(productPayload).eq("id", id);
+        const result = await supabase.from("products").update(productPayload).eq("id", id);
+        productError = result.error;
       } else {
-        const { data } = await supabase
-          .from("products")
-          .insert([productPayload])
-          .select()
-          .single();
-        productId = data.id;
+        const result = await supabase.from("products").insert(productPayload).select("id").single();
+        productError = result.error;
+        productId = result.data?.id;
+      }
+      if (productError) throw productError;
+      if (!productId) throw new Error("Produk tersimpan tanpa ID yang dapat dibaca.");
+
+      for (const row of detailRows) {
+        const payload = { product_id: productId, image_url: row.image_url, caption: row.caption, position: row.position };
+        const result = row.id
+          ? await supabase.from("product_detail_images").update(payload).eq("id", row.id)
+          : await supabase.from("product_detail_images").insert(payload);
+        if (result.error) throw result.error;
       }
 
-      // 3. Handle Detail Foto (Hapus yang lama, Insert yang baru)
-      // Cara termudah: hapus semua detail lama, lalu insert ulang
-      await supabase
-        .from("product_detail_images")
-        .delete()
-        .eq("product_id", productId);
-
-      for (let i = 0; i < details.length; i++) {
-        const d = details[i];
-        let detailUrl = d.image_url;
-
-        // Jika ada file baru di-upload
-        if (d.file) {
-          detailUrl = await uploadImage(d.file, "details");
-        }
-
-        if (detailUrl) {
-          await supabase.from("product_detail_images").insert([
-            {
-              product_id: productId,
-              image_url: detailUrl,
-              caption: d.caption,
-              position: i + 1,
-            },
-          ]);
-        }
+      const retainedIds = detailRows.map(row => row.id).filter(Boolean);
+      const removedRows = originalDetailRows.filter(row => !retainedIds.includes(row.id));
+      const removedIds = removedRows.map(row => row.id);
+      if (removedIds.length) {
+        const { error: deleteDetailsError } = await supabase.from("product_detail_images").delete().in("id", removedIds);
+        if (deleteDetailsError) throw deleteDetailsError;
       }
 
+      const replacedMain = mainImageFile && existingMainImage ? [existingMainImage] : [];
+      const removedDetailUrls = removedRows.map(row => row.image_url).filter(Boolean);
+      await removeStoredImages([...replacedMain, ...replacedDetailUrls, ...replacedDetailUrls.filter(url => replacedDetailUrls.includes(url)), ...replacedDetailUrls]);
       navigate("/admin");
     } catch (error) {
-      alert("Terjadi kesalahan: " + error.message);
+      // Keep uploaded files if a database write may already have referenced them.
+      alert("Terjadi kesalahan: " + (error.message || "Gagal menyimpan produk."));
     } finally {
       setLoading(false);
     }
   };
 
+  if (pageLoading) return <div className="p-8 text-center text-brand-muted">Memuat data produk...</div>;
+
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-brand-text mb-6">
-        {isEdit ? "Edit Produk" : "Tambah Produk Baru"}
-      </h1>
-
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100"
-      >
-        {/* Info Dasar */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium mb-1">
-              Nama Produk
-            </label>
-            <input
-              required
-              type="text"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="w-full p-3 border rounded-xl focus:ring-brand-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Kategori</label>
-            <select
-              required
-              value={formData.category_id}
-              onChange={(e) =>
-                setFormData({ ...formData, category_id: e.target.value })
-              }
-              className="w-full p-3 border rounded-xl focus:ring-brand-primary"
-            >
-              <option value="">Pilih Kategori</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+    <div className="mx-auto max-w-3xl">
+      <h1 className="mb-6 text-2xl font-bold text-brand-text">{isEdit ? "Edit Produk" : "Tambah Produk Baru"}</h1>
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <label className="block text-sm font-medium md:col-span-2">Nama Produk
+            <input required maxLength={160} value={formData.name} onChange={e=>setFormData(v=>({...v,name:e.target.value}))} className="mt-1 w-full rounded-xl border p-3"/>
+          </label>
+          <label className="block text-sm font-medium">Kategori
+            <select required value={formData.category_id} onChange={e=>setFormData(v=>({...v,category_id:e.target.value}))} className="mt-1 w-full rounded-xl border p-3">
+              <option value="">Pilih Kategori</option>{categories.map(category=><option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Harga (Rp)</label>
-            <input
-              required
-              type="number"
-              value={formData.price}
-              onChange={(e) =>
-                setFormData({ ...formData, price: e.target.value })
-              }
-              className="w-full p-3 border rounded-xl focus:ring-brand-primary"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium mb-1">Deskripsi</label>
-            <textarea
-              rows="3"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              className="w-full p-3 border rounded-xl focus:ring-brand-primary"
-            ></textarea>
-          </div>
-        </div>
-
-        <hr className="border-gray-100" />
-
-        {/* Status & Stok */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Status Produk
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) =>
-                setFormData({ ...formData, status: e.target.value })
-              }
-              className="w-full p-3 border rounded-xl focus:ring-brand-primary"
-            >
-              <option value="ready_stock">Ready Stock</option>
-              <option value="made_to_order">Pre-Order (PO)</option>
-              <option value="inquiry">Custom / Inquiry</option>
+          </label>
+          <label className="block text-sm font-medium">Harga (Rp)
+            <input required min="0" step="1" type="number" value={formData.price} onChange={e=>setFormData(v=>({...v,price:e.target.value}))} className="mt-1 w-full rounded-xl border p-3"/>
+          </label>
+          <label className="block text-sm font-medium md:col-span-2">Deskripsi
+            <textarea rows="4" maxLength={3000} value={formData.description} onChange={e=>setFormData(v=>({...v,description:e.target.value}))} className="mt-1 w-full rounded-xl border p-3"/>
+          </label>
+          <label className="block text-sm font-medium">Status Produk
+            <select value={formData.status} onChange={e=>setFormData(v=>({...v,status:e.target.value}))} className="mt-1 w-full rounded-xl border p-3">
+              <option value="ready_stock">Ready Stock</option><option value="made_to_order">Pre-Order (PO)</option><option value="inquiry">Custom / Inquiry</option>
             </select>
-          </div>
-          {formData.status === "ready_stock" && (
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Jumlah Stok
-              </label>
-              <input
-                type="number"
-                value={formData.stock}
-                onChange={(e) =>
-                  setFormData({ ...formData, stock: e.target.value })
-                }
-                className="w-full p-3 border rounded-xl focus:ring-brand-primary"
-              />
-            </div>
-          )}
+          </label>
+          {formData.status === "ready_stock" && <label className="block text-sm font-medium">Jumlah Stok
+            <input min="0" step="1" type="number" value={formData.stock} onChange={e=>setFormData(v=>({...v,stock:e.target.value}))} className="mt-1 w-full rounded-xl border p-3"/>
+          </label>}
         </div>
 
         <label className="flex items-center gap-3 rounded-xl border border-[#eadde2] bg-[#fbf6f8] p-4 text-sm font-medium">
-          <input type="checkbox" checked={formData.is_featured} onChange={e=>setFormData({...formData,is_featured:e.target.checked})} className="h-4 w-4 accent-[#b64d70]" />
+          <input type="checkbox" checked={formData.is_featured} onChange={e=>setFormData(v=>({...v,is_featured:e.target.checked}))} className="h-4 w-4 accent-[#b64d70]"/>
           Tampilkan di Home (Featured Collection)
         </label>
 
-        {/* Varian Ukuran & Warna */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Varian Ukuran
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={sizeInput}
-                onChange={(e) => setSizeInput(e.target.value)}
-                placeholder="Misal: S, M, L"
-                className="grow p-2 border rounded-lg"
-              />
-              <button
-                type="button"
-                onClick={addSize}
-                className="bg-gray-100 px-4 rounded-lg"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.sizes.map((s) => (
-                <span
-                  key={s}
-                  className="bg-brand-secondary text-brand-primary px-3 py-1 rounded-full text-sm flex items-center gap-1"
-                >
-                  {s}{" "}
-                  <button type="button" onClick={() => removeSize(s)}>
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Varian Warna
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={colorInput}
-                onChange={(e) => setColorInput(e.target.value)}
-                placeholder="Misal: Navy, Maroon"
-                className="grow p-2 border rounded-lg"
-              />
-              <button
-                type="button"
-                onClick={addColor}
-                className="bg-gray-100 px-4 rounded-lg"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.colors.map((c) => (
-                <span
-                  key={c}
-                  className="bg-brand-secondary text-brand-primary px-3 py-1 rounded-full text-sm flex items-center gap-1"
-                >
-                  {c}{" "}
-                  <button type="button" onClick={() => removeColor(c)}>
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
+        <div className="grid gap-5 md:grid-cols-2">
+          <div><label className="block text-sm font-medium">Varian Ukuran</label><div className="mt-2 flex gap-2"><input value={sizeInput} onChange={e=>setSizeInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(e.preventDefault(),addVariant("sizes",sizeInput,setSizeInput))} placeholder="Misal: S, M, L" className="min-w-0 grow rounded-lg border p-2"/><button type="button" onClick={()=>addVariant("sizes",sizeInput,setSizeInput)} className="rounded-lg bg-gray-100 px-3"><Plus size={17}/></button></div><div className="mt-2 flex flex-wrap gap-2">{formData.sizes.map(value=><button type="button" key={value} onClick={()=>setFormData(v=>({...v,sizes:v.sizes.filter(x=>x!==value)}))} className="rounded-full bg-brand-secondary px-3 py-1 text-sm text-brand-primary">{value} ×</button>)}</div></div>
+          <div><label className="block text-sm font-medium">Varian Warna</label><div className="mt-2 flex gap-2"><input value={colorInput} onChange={e=>setColorInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(e.preventDefault(),addVariant("colors",colorInput,setColorInput))} placeholder="Misal: Navy, Maroon" className="min-w-0 grow rounded-lg border p-2"/><button type="button" onClick={()=>addVariant("colors",colorInput,setColorInput)} className="rounded-lg bg-gray-100 px-3"><Plus size={17}/></button></div><div className="mt-2 flex flex-wrap gap-2">{formData.colors.map(value=><button type="button" key={value} onClick={()=>setFormData(v=>({...v,colors:v.colors.filter(x=>x!==value)}))} className="rounded-full bg-brand-secondary px-3 py-1 text-sm text-brand-primary">{value} ×</button>)}</div></div>
+        </div>
+
+        <div className="border-t pt-5">
+          <label className="block text-sm font-semibold">Foto Utama Produk <span className="font-normal text-gray-500">(JPG, PNG, WebP · maks. 2 MB)</span></label>
+          {existingMainImage && !mainImageFile && <img src={existingMainImage} alt="Foto utama saat ini" className="my-3 h-36 w-32 rounded-xl border object-cover"/>}
+          {mainImageFile && <img src={URL.createObjectURL(mainImageFile)} alt="Pratinjau foto utama" className="my-3 h-36 w-32 rounded-xl border object-cover"/>}
+          <input required={!isEdit && !existingMainImage} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setMainImageFile(e.target.files?.[0]||null)} className="mt-3 block w-full text-sm"/>
+        </div>
+
+        <div className="border-t pt-5">
+          <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-semibold">Foto Detail (maksimal 4)</p><p className="text-xs text-gray-500">Foto tambahan akan tampil dalam grid 2 kolom pada detail produk.</p></div>{details.length<4&&<button type="button" onClick={()=>setDetails(v=>[...v,{file:null,image_url:"",caption:""}])} className="inline-flex items-center gap-1 text-sm font-semibold text-brand-primary"><Plus size={16}/> Tambah Foto</button>}</div>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {details.map((detail,index)=><div key={detail.id||index} className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+              <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-white">{detail.file?<img src={URL.createObjectURL(detail.file)} alt="" className="h-full w-full object-cover"/>:detail.image_url?<img src={detail.image_url} alt="" className="h-full w-full object-cover"/>:<ImageIcon className="text-gray-300"/>}</div>
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setDetails(v=>v.map((item,i)=>i===index?{...item,file:e.target.files?.[0]||null}:item))} className="mt-3 block w-full text-xs"/>
+              <div className="mt-2 flex gap-2"><input value={detail.caption||""} onChange={e=>setDetails(v=>v.map((item,i)=>i===index?{...item,caption:e.target.value}:item))} placeholder="Caption foto" maxLength={100} className="min-w-0 grow rounded-lg border p-2 text-sm"/><button type="button" onClick={()=>setDetails(v=>v.filter((_,i)=>i!==index))} aria-label="Hapus foto detail" className="rounded-lg p-2 text-red-600 hover:bg-red-50"><X size={17}/></button></div>
+            </div>)}
           </div>
         </div>
 
-        <hr className="border-gray-100" />
-
-        {/* Upload Foto Utama */}
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Foto Utama Produk
-          </label>
-          {existingMainImage && !mainImageFile && (
-            <img
-              src={existingMainImage}
-              alt="Preview"
-              className="w-32 h-32 object-cover rounded-xl mb-2 border"
-            />
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setMainImageFile(e.target.files[0])}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-secondary file:text-brand-primary hover:file:bg-brand-primary hover:file:text-white transition-all"
-          />
-        </div>
-
-        {/* Upload Detail Foto (Maks 4) */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium">
-              Detail Foto (Maksimal 4)
-            </label>
-            {details.length < 4 && (
-              <button
-                type="button"
-                onClick={handleAddDetail}
-                className="text-sm text-brand-primary font-medium flex items-center gap-1 hover:underline"
-              >
-                <Plus className="w-4 h-4" /> Tambah Foto
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            {details.map((detail, index) => (
-              <div
-                key={index}
-                className="flex gap-3 items-start bg-gray-50 p-3 rounded-xl border border-gray-100"
-              >
-                <div className="w-16 h-16 bg-white rounded-lg border flex items-center justify-center overflow-hidden shrink-0">
-                  {detail.file ? (
-                    <img
-                      src={URL.createObjectURL(detail.file)}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : detail.image_url ? (
-                    <img
-                      src={detail.image_url}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <ImageIcon className="w-6 h-6 text-gray-300" />
-                  )}
-                </div>
-                <div className="grow space-y-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) =>
-                      updateDetail(index, "file", e.target.files[0])
-                    }
-                    className="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:bg-white file:text-gray-700 file:shadow-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Caption (misal: Detail Kerah)"
-                    value={detail.caption || ""}
-                    onChange={(e) =>
-                      updateDetail(index, "caption", e.target.value)
-                    }
-                    className="w-full p-2 text-sm border rounded-lg bg-white"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeDetail(index)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/admin")}
-            className="px-6 py-2 border rounded-xl text-gray-600 hover:bg-gray-50"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-2 bg-brand-primary text-white rounded-xl font-medium hover:bg-brand-primary/90 disabled:opacity-50"
-          >
-            {loading ? "Menyimpan..." : "Simpan Produk"}
-          </button>
-        </div>
+        <div className="flex justify-end gap-3 border-t pt-5"><button type="button" onClick={()=>navigate("/admin")} className="rounded-xl border px-5 py-2.5 text-gray-600">Batal</button><button type="submit" disabled={loading} className="rounded-xl bg-brand-primary px-6 py-2.5 font-semibold text-white disabled:opacity-60">{loading?"Menyimpan...":"Simpan Produk"}</button></div>
       </form>
     </div>
   );

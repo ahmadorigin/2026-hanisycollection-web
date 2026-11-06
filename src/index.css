@@ -14,6 +14,18 @@
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+
+.hanisy-marquee-track {
+  animation: hanisy-marquee 48s linear infinite;
+}
+
+.group:hover .hanisy-marquee-track,
+.group:focus-within .hanisy-marquee-track {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-\[hanisy-marquee_\48 s_linear_infinite\] { animation: none !important; }
+  .hanisy-marquee-track {
+    animation: none !important;
+  }
 }

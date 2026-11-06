@@ -36,7 +36,8 @@ export default function ProductForm() {
   const [colorInput, setColorInput] = useState("");
   const [mainImageFile, setMainImageFile] = useState(null);
   const [existingMainImage, setExistingMainImage] = useState("");
-  const [details, setDetails] = useState([]);\n  const [originalDetailUrls, setOriginalDetailUrls] = useState([]);
+  const [details, setDetails] = useState([]);
+  const [originalDetailUrls, setOriginalDetailUrls] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -59,7 +60,9 @@ export default function ProductForm() {
             is_featured: Boolean(data.is_featured),
           });
           setExistingMainImage(data.main_image_url || "");
-          const loadedDetails = (data.product_detail_images || []).sort((a,b)=>(a.position||0)-(b.position||0)).slice(0,4);\n          setDetails(loadedDetails);\n          setOriginalDetailUrls(loadedDetails.map(item => item.image_url).filter(Boolean));
+          const loadedDetails = (data.product_detail_images || []).sort((a,b)=>(a.position||0)-(b.position||0)).slice(0,4);
+          setDetails(loadedDetails);
+          setOriginalDetailUrls(loadedDetails.map(item => item.image_url).filter(Boolean));
         }
       }
       if (active) setPageLoading(false);
@@ -141,7 +144,8 @@ export default function ProductForm() {
       if (productError) throw productError;
       if (!productId) throw new Error("Produk tersimpan tanpa ID yang dapat dibaca.");
 
-      const retainedDetailUrls = detailRows.map(row => row.image_url);\n      const oldDetailUrls = originalDetailUrls.filter(url => !retainedDetailUrls.includes(url));
+      const retainedDetailUrls = detailRows.map(row => row.image_url);
+      const oldDetailUrls = originalDetailUrls.filter(url => !retainedDetailUrls.includes(url));
       const { error: deleteDetailsError } = await supabase.from("product_detail_images").delete().eq("product_id", productId);
       if (deleteDetailsError) throw deleteDetailsError;
       if (detailRows.length) {

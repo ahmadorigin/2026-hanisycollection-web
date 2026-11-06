@@ -159,7 +159,7 @@ export default function ProductForm() {
       await removeStoredImages([...replacedMain, ...oldDetailUrls]);
       navigate("/admin");
     } catch (error) {
-      if (newlyUploaded.length) await removeStoredImages(newlyUploaded);
+      // Keep uploaded files if a database write may already have referenced them.
       alert("Terjadi kesalahan: " + (error.message || "Gagal menyimpan produk."));
     } finally {
       setLoading(false);

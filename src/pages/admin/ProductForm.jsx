@@ -37,7 +37,6 @@ export default function ProductForm() {
   const [mainImageFile, setMainImageFile] = useState(null);
   const [existingMainImage, setExistingMainImage] = useState("");
   const [details, setDetails] = useState([]);
-  const [originalDetailUrls, setOriginalDetailUrls] = useState([]);
   const [originalDetailRows, setOriginalDetailRows] = useState([]);
 
   useEffect(() => {
@@ -63,7 +62,6 @@ export default function ProductForm() {
           setExistingMainImage(data.main_image_url || "");
           const loadedDetails = (data.product_detail_images || []).sort((a,b)=>(a.position||0)-(b.position||0)).slice(0,4);
           setDetails(loadedDetails);
-          setOriginalDetailUrls(loadedDetails.map(item => item.image_url).filter(Boolean));
           setOriginalDetailRows(loadedDetails);
         }
       }
@@ -94,7 +92,6 @@ export default function ProductForm() {
     if (formData.price === "" || Number(formData.price) < 0 || !Number.isFinite(Number(formData.price))) return alert("Masukkan harga yang valid.");
     if (!isEdit && !mainImageFile) return alert("Foto utama produk wajib diunggah.");
     setLoading(true);
-    const newlyUploaded = [];
     try {
       validateFile(mainImageFile);
       details.forEach(detail => validateFile(detail.file));
@@ -102,7 +99,6 @@ export default function ProductForm() {
       let mainImageUrl = existingMainImage;
       if (mainImageFile) {
         mainImageUrl = await uploadImage(mainImageFile);
-        newlyUploaded.push(mainImageUrl);
       }
 
       const detailRows = [];
@@ -112,7 +108,6 @@ export default function ProductForm() {
         let imageUrl = detail.image_url || "";
         if (detail.file) {
           imageUrl = await uploadImage(detail.file, "details");
-          newlyUploaded.push(imageUrl);
           if (detail.image_url) replacedDetailUrls.push(detail.image_url);
         }
         if (imageUrl) detailRows.push({

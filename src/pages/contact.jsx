@@ -1,9 +1,9 @@
-import { Instagram, MessageCircle, Mail, MapPin } from "lucide-react";
+import { Camera, MessageCircle, Mail, MapPin } from "lucide-react";
 import { generateCustomWALink } from "../lib/utils";
 
 const socials = [
   { label: "WhatsApp", value: "Chat dengan Hanisy Collection", href: generateCustomWALink(), icon: MessageCircle },
-  { label: "Instagram", value: "", href: "", icon: Instagram },
+  { label: "Instagram", value: "", href: "", icon: Camera },
   { label: "Email", value: "", href: "", icon: Mail },
   { label: "Alamat", value: "", href: "", icon: MapPin },
 ];

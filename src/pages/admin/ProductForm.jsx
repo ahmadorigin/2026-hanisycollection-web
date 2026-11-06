@@ -22,6 +22,7 @@ export default function ProductForm() {
     stock: 0,
     sizes: [],
     colors: [],
+    is_featured: false,
   });
 
   // State untuk Varian Input Sementara
@@ -59,6 +60,7 @@ export default function ProductForm() {
           stock: data.stock,
           sizes: data.sizes || [],
           colors: data.colors || [],
+          is_featured: data.is_featured || false,
         });
         setExistingMainImage(data.main_image_url);
         setDetails(data.product_detail_images || []);
@@ -116,6 +118,12 @@ export default function ProductForm() {
     setLoading(true);
 
     try {
+      const allowed = ["image/jpeg", "image/png", "image/webp"];
+      const allFiles = [mainImageFile, ...details.map(d => d.file)].filter(Boolean);
+      for (const file of allFiles) {
+        if (!allowed.includes(file.type)) throw new Error("Format foto harus JPG, PNG, atau WebP.");
+        if (file.size > 2 * 1024 * 1024) throw new Error("Ukuran setiap foto maksimal 2 MB.");
+      }
       let mainImageUrl = existingMainImage;
       // 1. Upload Foto Utama jika ada file baru
       if (mainImageFile) {
@@ -132,6 +140,7 @@ export default function ProductForm() {
         stock: formData.status === "ready_stock" ? Number(formData.stock) : 0,
         sizes: formData.sizes,
         colors: formData.colors,
+        is_featured: formData.is_featured,
         main_image_url: mainImageUrl,
       };
 
@@ -288,6 +297,11 @@ export default function ProductForm() {
             </div>
           )}
         </div>
+
+        <label className="flex items-center gap-3 rounded-xl border border-[#eadde2] bg-[#fbf6f8] p-4 text-sm font-medium">
+          <input type="checkbox" checked={formData.is_featured} onChange={e=>setFormData({...formData,is_featured:e.target.checked})} className="h-4 w-4 accent-[#b64d70]" />
+          Tampilkan di Home (Featured Collection)
+        </label>
 
         {/* Varian Ukuran & Warna */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

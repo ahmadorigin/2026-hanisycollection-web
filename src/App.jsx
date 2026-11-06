@@ -50,11 +50,22 @@ function PublicLayout() {
         <div className="mx-auto flex h-19 max-w-7xl items-center justify-between px-5">
           <Link
             to="/"
-            className="font-serif text-2xl leading-none tracking-tight text-[#301b26]"
+            aria-label="Hanisy Collection - Beranda"
+            className="flex items-center gap-3"
           >
-            HANISY{" "}
-            <span className="block text-xs font-sans tracking-[.28em] text-[#b64d70]">
-              COLLECTION
+            <img
+              src="/hanisy.svg"
+              alt=""
+              aria-hidden="true"
+              className="h-11 w-11 shrink-0 object-contain"
+            />
+            <span className="text-left leading-none">
+              <span className="block font-serif text-[1.35rem] tracking-[0.08em] text-[#301b26]">
+                HANISY
+              </span>
+              <span className="mt-1 block text-[0.6rem] font-sans tracking-[0.3em] text-[#b64d70]">
+                COLLECTION
+              </span>
             </span>
           </Link>
 
@@ -76,8 +87,10 @@ function PublicLayout() {
           </nav>
 
           <button
-            aria-label="Buka menu"
-            onClick={() => setOpen(false)}
+            type="button"
+            aria-label={open ? "Tutup menu" : "Buka menu"}
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
             className="rounded-full p-2 md:hidden"
           >
             {open ? <X /> : <Menu />}
@@ -90,6 +103,7 @@ function PublicLayout() {
               <Link
                 key={path}
                 to={path}
+                onClick={() => setOpen(false)}
                 className="rounded-xl px-4 py-3 hover:bg-[#fbf2f5]"
               >
                 {label}

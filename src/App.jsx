@@ -6,7 +6,6 @@ import {
   Link,
   NavLink,
   Outlet,
-  useLocation,
   Navigate,
 } from "react-router-dom";
 import { Menu, X, MessageCircle } from "lucide-react";
@@ -25,7 +24,6 @@ import ProductForm from "./pages/admin/ProductForm";
 function PublicLayout() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const location = useLocation();
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 24);
@@ -33,13 +31,10 @@ function PublicLayout() {
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  useEffect(() => setOpen(false), [location.pathname]);
-
   const links = [
     ["Beranda", "/"],
     ["Collection", "/collection"],
     ["About", "/about"],
-    ["Testimonial", "/#testimonials"],
     ["Contact", "/contact"],
   ];
 
@@ -52,7 +47,7 @@ function PublicLayout() {
             : "border-white/20 bg-white"
         }`}
       >
-        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5">
+        <div className="mx-auto flex h-19 max-w-7xl items-center justify-between px-5">
           <Link
             to="/"
             className="font-serif text-2xl leading-none tracking-tight text-[#301b26]"
@@ -82,7 +77,7 @@ function PublicLayout() {
 
           <button
             aria-label="Buka menu"
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => setOpen(false)}
             className="rounded-full p-2 md:hidden"
           >
             {open ? <X /> : <Menu />}

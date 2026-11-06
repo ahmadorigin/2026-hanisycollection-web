@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link, NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
-import { Menu, X, ChevronDown, Instagram, MessageCircle } from "lucide-react";
+import { Menu, X, ChevronDown, MessageCircle } from "lucide-react";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/home";

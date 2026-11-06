@@ -38,6 +38,7 @@ export default function ProductForm() {
   const [existingMainImage, setExistingMainImage] = useState("");
   const [details, setDetails] = useState([]);
   const [originalDetailUrls, setOriginalDetailUrls] = useState([]);
+  const [originalDetailRows, setOriginalDetailRows] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -63,6 +64,7 @@ export default function ProductForm() {
           const loadedDetails = (data.product_detail_images || []).sort((a,b)=>(a.position||0)-(b.position||0)).slice(0,4);
           setDetails(loadedDetails);
           setOriginalDetailUrls(loadedDetails.map(item => item.image_url).filter(Boolean));
+          setOriginalDetailRows(loadedDetails);
         }
       }
       if (active) setPageLoading(false);
@@ -104,17 +106,20 @@ export default function ProductForm() {
       }
 
       const detailRows = [];
+      const replacedDetailUrls = [];
       for (let index = 0; index < details.length; index += 1) {
         const detail = details[index];
         let imageUrl = detail.image_url || "";
         if (detail.file) {
           imageUrl = await uploadImage(detail.file, "details");
           newlyUploaded.push(imageUrl);
+          if (detail.image_url) replacedDetailUrls.push(detail.image_url);
         }
         if (imageUrl) detailRows.push({
+          id: detail.id || null,
           image_url: imageUrl,
           caption: (detail.caption || "").trim(),
-          position: detailRows.length + 1,
+          position: index + 1,
         });
       }
 
@@ -144,19 +149,25 @@ export default function ProductForm() {
       if (productError) throw productError;
       if (!productId) throw new Error("Produk tersimpan tanpa ID yang dapat dibaca.");
 
-      const retainedDetailUrls = detailRows.map(row => row.image_url);
-      const oldDetailUrls = originalDetailUrls.filter(url => !retainedDetailUrls.includes(url));
-      const { error: deleteDetailsError } = await supabase.from("product_detail_images").delete().eq("product_id", productId);
-      if (deleteDetailsError) throw deleteDetailsError;
-      if (detailRows.length) {
-        const { error: insertDetailsError } = await supabase.from("product_detail_images").insert(
-          detailRows.map(row => ({ ...row, product_id: productId }))
-        );
-        if (insertDetailsError) throw insertDetailsError;
+      for (const row of detailRows) {
+        const payload = { product_id: productId, image_url: row.image_url, caption: row.caption, position: row.position };
+        const result = row.id
+          ? await supabase.from("product_detail_images").update(payload).eq("id", row.id)
+          : await supabase.from("product_detail_images").insert(payload);
+        if (result.error) throw result.error;
+      }
+
+      const retainedIds = detailRows.map(row => row.id).filter(Boolean);
+      const removedRows = originalDetailRows.filter(row => !retainedIds.includes(row.id));
+      const removedIds = removedRows.map(row => row.id);
+      if (removedIds.length) {
+        const { error: deleteDetailsError } = await supabase.from("product_detail_images").delete().in("id", removedIds);
+        if (deleteDetailsError) throw deleteDetailsError;
       }
 
       const replacedMain = mainImageFile && existingMainImage ? [existingMainImage] : [];
-      await removeStoredImages([...replacedMain, ...oldDetailUrls]);
+      const removedDetailUrls = removedRows.map(row => row.image_url).filter(Boolean);
+      await removeStoredImages([...replacedMain, ...replacedDetailUrls, ...replacedDetailUrls.filter(url => replacedDetailUrls.includes(url)), ...replacedDetailUrls]);
       navigate("/admin");
     } catch (error) {
       // Keep uploaded files if a database write may already have referenced them.

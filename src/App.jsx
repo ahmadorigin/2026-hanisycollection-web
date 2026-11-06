@@ -53,12 +53,6 @@ function PublicLayout() {
             aria-label="Hanisy Collection - Beranda"
             className="flex items-center gap-3"
           >
-            <img
-              src="/hanisy.svg"
-              alt=""
-              aria-hidden="true"
-              className="h-11 w-11 shrink-0 object-contain"
-            />
             <span className="text-left leading-none">
               <span className="block font-serif text-[1.35rem] tracking-[0.08em] text-[#301b26]">
                 HANISY

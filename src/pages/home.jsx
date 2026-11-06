@@ -1,4 +1,4 @@
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Heart, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
@@ -6,15 +6,214 @@ import ProductCard from "../components/ProductCard";
 import ProductModal from "../components/ProductModal";
 import { generateCustomWALink } from "../lib/utils";
 
-export default function Home(){
- const [products,setProducts]=useState([]),[selected,setSelected]=useState(null),[testimonials,setTestimonials]=useState([]);
- useEffect(()=>{supabase.from("products").select("*,categories(name),product_detail_images(*)").eq("is_featured",true).order("created_at",{ascending:true}).limit(4).then(({data})=>{if(data)setProducts(data.map(p=>({...p,detail_images:p.product_detail_images||[]}))) });supabase.from("testimonials").select("id,customer_name,customer_origin,content").order("created_at",{ascending:false}).then(({data})=>{if(data)setTestimonials(data)});},[]);
- return <div className="bg-white">
- <section className="relative overflow-hidden bg-[#f8edf1]"><div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,#fff9_0,transparent_45%)]"/><div className="relative mx-auto grid max-w-7xl items-center gap-8 px-5 py-16 md:grid-cols-2 md:py-24"><div className="max-w-xl"><p className="text-xs font-semibold uppercase tracking-[.3em] text-[#b64d70]">Modest fashion · Modern elegance</p><h1 className="mt-5 font-serif text-5xl leading-[1.08] text-[#321d29] md:text-7xl">Anggun dalam <span className="italic text-[#b64d70]">kesederhanaan.</span></h1><p className="mt-6 max-w-lg text-base leading-8 text-[#75666d]">Temukan busana modest dengan inspirasi hanbok yang memadukan kesantunan, kenyamanan, dan sentuhan modern.</p><div className="mt-9 flex flex-wrap gap-3"><Link to="/collection" className="inline-flex items-center gap-2 rounded-full bg-[#b64d70] px-7 py-4 font-semibold text-white transition hover:bg-[#963c5c]">Jelajahi Koleksi <ArrowRight size={18}/></Link><a href={generateCustomWALink()} target="_blank" rel="noreferrer" className="rounded-full border border-[#d9b8c4] px-7 py-4 font-semibold text-[#60394a] transition hover:bg-white">Pesan Khusus</a></div></div><div className="relative mx-auto w-full max-w-lg"><div className="absolute -inset-5 rounded-[48%_48%_20%_20%] bg-[#e9cbd6]"/><img src="/images/hanisy-hero.png" alt="Inspirasi modest fashion Hanisy Collection" className="relative aspect-[4/5] w-full rounded-[48%_48%_18%_18%] object-cover shadow-xl" onError={e=>{e.currentTarget.style.display="none"}}/><div className="absolute bottom-5 left-0 rounded-r-2xl bg-white/90 px-5 py-3 font-serif text-lg text-[#61394b]">Elegance in every detail</div></div></div></section>
- <section className="mx-auto grid max-w-7xl grid-cols-2 gap-3 px-5 py-8 md:grid-cols-4">{[{I:Truck,t:"Pengiriman aman",d:"Pesanan dikemas dengan baik"},{I:ShieldCheck,t:"Layanan terpercaya",d:"Komunikasi jelas dan ramah"},{I:Sparkles,t:"Detail istimewa",d:"Sentuhan khas di setiap koleksi"},{I:Heart,t:"Dibuat dengan perhatian",d:"Nyaman untuk menemani hari"}].map(({I,t,d})=><div key={t} className="flex items-center gap-3 rounded-2xl bg-[#fbf6f8] p-4"><I className="h-6 w-6 shrink-0 text-[#b64d70]"/><div><p className="text-sm font-semibold">{t}</p><p className="mt-1 text-xs text-[#82747b]">{d}</p></div></div>)}</section>
- <section className="mx-auto max-w-7xl px-5 py-16"><div className="text-center"><p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">Pilihan Hanisy</p><h2 className="mt-3 font-serif text-4xl text-[#2d2027]">Featured Collection</h2><p className="mt-3 text-sm text-[#82747b]">Pilihan koleksi yang kami hadirkan untukmu</p></div>{products.length?<div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">{products.map(p=><ProductCard key={p.id} product={p} onClick={()=>setSelected(p)}/>)}</div>:<div className="mt-10 rounded-3xl bg-[#fbf6f8] p-10 text-center text-sm text-[#82747b]">Koleksi pilihan sedang dipersiapkan.</div>}<div className="mt-10 text-center"><Link to="/collection" className="inline-flex items-center gap-2 border-b border-[#b64d70] pb-2 font-semibold text-[#a44a69]">Lihat Semua Koleksi <ArrowRight size={17}/></Link></div></section>
- <section id="testimonials" className="overflow-hidden bg-white py-16 scroll-mt-24"><div className="mx-auto max-w-7xl px-5 text-center"><p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">Cerita pelanggan</p><h2 className="mt-3 font-serif text-4xl text-[#2d2027]">Kesan hangat dari pelanggan</h2><p className="mt-3 text-sm text-[#82747b]">Setiap cerita menjadi bagian dari perjalanan Hanisy.</p></div>{testimonials.length>0&&<div className="group relative mt-10 overflow-hidden"><div className="flex w-max hanisy-marquee-track gap-5 px-3">{[...testimonials,...testimonials].map((item,index)=><article key={`${item.id}-${index}`} className="w-[280px] shrink-0 rounded-3xl border border-[#f0e4e8] bg-[#fbf7f8] p-6 md:w-[340px]"><div className="mb-4 text-3xl font-serif text-[#c45b7d]">“</div><p className="min-h-24 text-sm leading-7 text-[#65545d]">{item.content}</p><div className="mt-5 border-t border-[#eadde2] pt-4"><p className="font-semibold text-[#30232a]">{item.customer_name}</p><p className="mt-1 text-xs text-[#9a7d89]">{item.customer_origin||"Pelanggan Hanisy"}</p></div></article>)}</div></div>}</section>
- <section className="bg-[#f8edf1] px-5 py-16 text-center"><p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">Tentang Hanisy</p><h2 className="mx-auto mt-3 max-w-2xl font-serif text-4xl text-[#321d29]">Berbusana santun, tetap menjadi diri sendiri</h2><p className="mx-auto mt-5 max-w-xl leading-7 text-[#75666d]">Kami percaya kenyamanan dan keanggunan dapat berjalan beriringan.</p><Link to="/about" className="mt-7 inline-flex rounded-full bg-[#b64d70] px-7 py-3 font-semibold text-white">Kenali Hanisy</Link></section>
- {selected&&<ProductModal product={selected} onClose={()=>setSelected(null)}/>}
- </div>
+export default function Home() {
+  const [products, setProducts] = useState([]),
+    [selected, setSelected] = useState(null),
+    [testimonials, setTestimonials] = useState([]);
+  useEffect(() => {
+    supabase
+      .from("products")
+      .select("*,categories(name),product_detail_images(*)")
+      .eq("is_featured", true)
+      .order("created_at", { ascending: true })
+      .limit(4)
+      .then(({ data }) => {
+        if (data)
+          setProducts(
+            data.map((p) => ({
+              ...p,
+              detail_images: p.product_detail_images || [],
+            })),
+          );
+      });
+    supabase
+      .from("testimonials")
+      .select("id,customer_name,customer_origin,content")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setTestimonials(data);
+      });
+  }, []);
+  return (
+    <div className="bg-white">
+      <section className="relative overflow-hidden bg-[#f8edf1]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,#fff9_0,transparent_45%)]" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-5 py-16 md:grid-cols-2 md:py-24">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[.3em] text-[#b64d70]">
+              Modest fashion · Modern elegance
+            </p>
+            <h1 className="mt-5 font-serif text-5xl leading-[1.08] text-[#321d29] md:text-7xl">
+              Anggun dalam{" "}
+              <span className="italic text-[#b64d70]">kesederhanaan.</span>
+            </h1>
+            <p className="mt-6 max-w-lg text-base leading-8 text-[#75666d]">
+              Temukan busana modest dengan inspirasi hanbok yang memadukan
+              kesantunan, kenyamanan, dan sentuhan modern.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link
+                to="/collection"
+                className="inline-flex items-center gap-2 rounded-full bg-[#b64d70] px-7 py-4 font-semibold text-white transition hover:bg-[#963c5c]"
+              >
+                Jelajahi Koleksi <ArrowRight size={18} />
+              </Link>
+              <a
+                href={generateCustomWALink()}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-[#d9b8c4] px-7 py-4 font-semibold text-[#60394a] transition hover:bg-white"
+              >
+                Pesan Khusus
+              </a>
+            </div>
+          </div>
+          <div className="relative mx-auto w-full max-w-lg">
+            <div className="absolute -inset-5 rounded-[48%_48%_20%_20%] bg-[#e9cbd6]" />
+            <img
+              src="/images/hanisy-hero.png"
+              alt="Inspirasi modest fashion Hanisy Collection"
+              className="relative aspect-4/5 w-full rounded-[48%_48%_18%_18%] object-cover shadow-xl"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+            <div className="absolute bottom-5 left-0 rounded-r-2xl bg-white/90 px-5 py-3 font-serif text-lg text-[#61394b]">
+              Elegance in every detail
+            </div>
+          </div>
+        </div>
+      </section>
+      <section className="mx-auto grid max-w-7xl grid-cols-2 gap-3 px-5 py-8 md:grid-cols-4">
+        {[
+          { I: Truck, t: "Pengiriman aman", d: "Pesanan dikemas dengan baik" },
+          {
+            I: ShieldCheck,
+            t: "Layanan terpercaya",
+            d: "Komunikasi jelas dan ramah",
+          },
+          {
+            I: Sparkles,
+            t: "Detail istimewa",
+            d: "Sentuhan khas di setiap koleksi",
+          },
+          {
+            I: Heart,
+            t: "Dibuat dengan perhatian",
+            d: "Nyaman untuk menemani hari",
+          },
+        ].map(({ I, t, d }) => (
+          <div
+            key={t}
+            className="flex items-center gap-3 rounded-2xl bg-[#fbf6f8] p-4"
+          >
+            <I className="h-6 w-6 shrink-0 text-[#b64d70]" />
+            <div>
+              <p className="text-sm font-semibold">{t}</p>
+              <p className="mt-1 text-xs text-[#82747b]">{d}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+      <section className="mx-auto max-w-7xl px-5 py-16">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">
+            Pilihan Hanisy
+          </p>
+          <h2 className="mt-3 font-serif text-4xl text-[#2d2027]">
+            Featured Collection
+          </h2>
+          <p className="mt-3 text-sm text-[#82747b]">
+            Pilihan koleksi yang kami hadirkan untukmu
+          </p>
+        </div>
+        {products.length ? (
+          <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+            {products.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                onClick={() => setSelected(p)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-10 rounded-3xl bg-[#fbf6f8] p-10 text-center text-sm text-[#82747b]">
+            Koleksi pilihan sedang dipersiapkan.
+          </div>
+        )}
+        <div className="mt-10 text-center">
+          <Link
+            to="/collection"
+            className="inline-flex items-center gap-2 border-b border-[#b64d70] pb-2 font-semibold text-[#a44a69]"
+          >
+            Lihat Semua Koleksi <ArrowRight size={17} />
+          </Link>
+        </div>
+      </section>
+      <section
+        id="testimonials"
+        className="overflow-hidden bg-white py-16 scroll-mt-24"
+      >
+        <div className="mx-auto max-w-7xl px-5 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">
+            Cerita pelanggan
+          </p>
+          <h2 className="mt-3 font-serif text-4xl text-[#2d2027]">
+            Kesan hangat dari pelanggan
+          </h2>
+          <p className="mt-3 text-sm text-[#82747b]">
+            Setiap cerita menjadi bagian dari perjalanan Hanisy.
+          </p>
+        </div>
+        {testimonials.length > 0 && (
+          <div className="group relative mt-10 overflow-hidden">
+            <div className="flex w-max hanisy-marquee-track gap-5 px-3">
+              {[...testimonials, ...testimonials].map((item, index) => (
+                <article
+                  key={`${item.id}-${index}`}
+                  className="w-70 shrink-0 rounded-3xl border border-[#f0e4e8] bg-[#fbf7f8] p-6 md:w-85"
+                >
+                  <div className="mb-4 text-3xl font-serif text-[#c45b7d]">
+                    “
+                  </div>
+                  <p className="min-h-24 text-sm leading-7 text-[#65545d]">
+                    {item.content}
+                  </p>
+                  <div className="mt-5 border-t border-[#eadde2] pt-4">
+                    <p className="font-semibold text-[#30232a]">
+                      {item.customer_name}
+                    </p>
+                    <p className="mt-1 text-xs text-[#9a7d89]">
+                      {item.customer_origin || "Pelanggan Hanisy"}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+      <section className="bg-[#f8edf1] px-5 py-16 text-center">
+        <p className="text-xs font-semibold uppercase tracking-[.25em] text-[#b64d70]">
+          Tentang Hanisy
+        </p>
+        <h2 className="mx-auto mt-3 max-w-2xl font-serif text-4xl text-[#321d29]">
+          Berbusana santun, tetap menjadi diri sendiri
+        </h2>
+        <p className="mx-auto mt-5 max-w-xl leading-7 text-[#75666d]">
+          Kami percaya kenyamanan dan keanggunan dapat berjalan beriringan.
+        </p>
+        <Link
+          to="/about"
+          className="mt-7 inline-flex rounded-full bg-[#b64d70] px-7 py-3 font-semibold text-white"
+        >
+          Kenali Hanisy
+        </Link>
+      </section>
+      {selected && (
+        <ProductModal product={selected} onClose={() => setSelected(null)} />
+      )}
+    </div>
+  );
 }

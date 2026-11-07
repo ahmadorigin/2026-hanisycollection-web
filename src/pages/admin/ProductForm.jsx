@@ -163,7 +163,7 @@ export default function ProductForm() {
       const replacedMain = mainImageFile && existingMainImage ? [existingMainImage] : [];
       const removedDetailUrls = removedRows.map(row => row.image_url).filter(Boolean);
       await removeStoredImages([...replacedMain, ...replacedDetailUrls, ...replacedDetailUrls.filter(url => replacedDetailUrls.includes(url)), ...replacedDetailUrls]);
-      navigate("/admin");
+      navigate("/admin/products");
     } catch (error) {
       // Keep uploaded files if a database write may already have referenced them.
       alert("Terjadi kesalahan: " + (error.message || "Gagal menyimpan produk."));

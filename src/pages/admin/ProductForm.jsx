@@ -36,6 +36,12 @@ export default function ProductForm() {
   const [colorInput, setColorInput] = useState("");
   const [mainImageFile, setMainImageFile] = useState(null);
   const [existingMainImage, setExistingMainImage] = useState("");
+  const [frontImageFile, setFrontImageFile] = useState(null);
+  const [backImageFile, setBackImageFile] = useState(null);
+  const [existingFrontImage, setExistingFrontImage] = useState("");
+  const [existingBackImage, setExistingBackImage] = useState("");
+  const [originalFrontImage, setOriginalFrontImage] = useState("");
+  const [originalBackImage, setOriginalBackImage] = useState("");
   const [details, setDetails] = useState([]);
   const [originalDetailRows, setOriginalDetailRows] = useState([]);
 
@@ -60,6 +66,10 @@ export default function ProductForm() {
             is_featured: Boolean(data.is_featured),
           });
           setExistingMainImage(data.main_image_url || "");
+          setExistingFrontImage(data.front_image_url || "");
+          setExistingBackImage(data.back_image_url || "");
+          setOriginalFrontImage(data.front_image_url || "");
+          setOriginalBackImage(data.back_image_url || "");
           const loadedDetails = (data.product_detail_images || []).sort((a,b)=>(a.position||0)-(b.position||0)).slice(0,4);
           setDetails(loadedDetails);
           setOriginalDetailRows(loadedDetails);
@@ -102,6 +112,11 @@ export default function ProductForm() {
         mainImageUrl = await uploadImage(mainImageFile);
       }
 
+      let frontImageUrl = existingFrontImage;
+      if (frontImageFile) frontImageUrl = await uploadImage(frontImageFile, "front");
+      let backImageUrl = existingBackImage;
+      if (backImageFile) backImageUrl = await uploadImage(backImageFile, "back");
+
       const detailRows = [];
       const replacedDetailUrls = [];
       for (let index = 0; index < details.length; index += 1) {
@@ -131,6 +146,8 @@ export default function ProductForm() {
         colors: formData.colors,
         is_featured: formData.is_featured,
         main_image_url: mainImageUrl,
+        front_image_url: frontImageUrl || null,
+        back_image_url: backImageUrl || null,
       };
 
       let productId = id;
@@ -166,9 +183,14 @@ export default function ProductForm() {
         if (deleteDetailsError) throw deleteDetailsError;
       }
 
-      const replacedMain = mainImageFile && existingMainImage ? [existingMainImage] : [];
-      const removedDetailUrls = removedRows.map(row => row.image_url).filter(Boolean);
-      await removeStoredImages([...replacedMain, ...replacedDetailUrls, ...replacedDetailUrls.filter(url => replacedDetailUrls.includes(url)), ...replacedDetailUrls]);
+      const replacedUrls = [
+        mainImageFile ? existingMainImage : "",
+        (frontImageFile || existingFrontImage !== originalFrontImage) ? originalFrontImage : "",
+        (backImageFile || existingBackImage !== originalBackImage) ? originalBackImage : "",
+        ...removedRows.map(row => row.image_url),
+        ...replacedDetailUrls,
+      ].filter(Boolean);
+      await removeStoredImages(replacedUrls);
       navigate("/admin/products");
     } catch (error) {
       // Keep uploaded files if a database write may already have referenced them.
@@ -228,6 +250,26 @@ export default function ProductForm() {
           {existingMainImage && !mainImageFile && <img src={existingMainImage} alt="Foto utama saat ini" className="my-3 h-36 w-32 rounded-xl border object-cover"/>}
           {mainImageFile && <img src={URL.createObjectURL(mainImageFile)} alt="Pratinjau foto utama" className="my-3 h-36 w-32 rounded-xl border object-cover"/>}
           <input required={!isEdit && !existingMainImage} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setMainImageFile(e.target.files?.[0]||null)} className="mt-3 block w-full text-sm"/>
+        </div>
+
+        <div className="border-t pt-5">
+          <p className="mb-3 text-sm font-semibold">Foto Carousel Tambahan (opsional)</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium">Foto Tampak Depan</label>
+              {(frontImageFile || existingFrontImage) && <img src={frontImageFile ? URL.createObjectURL(frontImageFile) : existingFrontImage} alt="Pratinjau tampak depan" className="my-2 h-36 w-full rounded-xl border bg-gray-50 object-contain"/>}
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setFrontImageFile(e.target.files?.[0]||null)} className="mt-2 block w-full text-sm"/>
+              {existingFrontImage && <button type="button" onClick={()=>{setExistingFrontImage("");setFrontImageFile(null);}} className="mt-2 text-xs text-red-600">Hapus foto tampak depan</button>}
+              <p className="mt-1 text-xs text-gray-500">Opsional · JPG, PNG, WebP · maks. 2 MB</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Foto Tampak Belakang</label>
+              {(backImageFile || existingBackImage) && <img src={backImageFile ? URL.createObjectURL(backImageFile) : existingBackImage} alt="Pratinjau tampak belakang" className="my-2 h-36 w-full rounded-xl border bg-gray-50 object-contain"/>
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setBackImageFile(e.target.files?.[0]||null)} className="mt-2 block w-full text-sm"/>
+              {existingBackImage && <button type="button" onClick={()=>{setExistingBackImage("");setBackImageFile(null);}} className="mt-2 text-xs text-red-600">Hapus foto tampak belakang</button>}
+              <p className="mt-1 text-xs text-gray-500">Opsional · JPG, PNG, WebP · maks. 2 MB</p>
+            </div>
+          </div>
         </div>
 
         <div className="border-t pt-5">

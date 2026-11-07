@@ -28,7 +28,7 @@ export default function ProductModal({ product, onClose }) {
   }, [lightbox, onClose]);
   if (!product) return null;
   const unavailable = product.status === "ready_stock" && product.stock === 0;
-  const wa = generateWALink(product, size, color, window.location.href);
+  const wa = generateWALink(product, size, color);
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-0 backdrop-blur-sm md:p-5"
@@ -71,6 +71,11 @@ export default function ProductModal({ product, onClose }) {
                     alt={d.caption || `Detail ${i + 1} ${product.name}`}
                     className="aspect-4/3 w-full object-cover"
                   />
+                  {d.caption?.trim() && (
+                    <span className="block px-2 py-3 text-center text-sm font-medium text-[#65545d]">
+                      {d.caption}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -85,6 +90,9 @@ export default function ProductModal({ product, onClose }) {
               <h2 className="mt-2 font-serif text-3xl text-[#30232a]">
                 {product.name}
               </h2>
+              <p className="mt-2 text-sm font-medium text-[#8b747f]">
+                Kode Produk: {product.code}
+              </p>
             </div>
             <button
               onClick={onClose}

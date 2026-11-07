@@ -71,7 +71,7 @@ export default function Home() {
           <div className="relative mx-auto w-full max-w-lg">
             <div className="absolute -inset-5 rounded-[48%_48%_20%_20%] bg-[#e9cbd6]" />
             <img
-              src="/images/hanisy-hero.png"
+              src="/images/hanisy2.jpg"
               alt="Inspirasi modest fashion Hanisy Collection"
               className="relative aspect-4/5 w-full rounded-[48%_48%_18%_18%] object-cover shadow-xl"
               onError={(e) => {
@@ -206,7 +206,7 @@ export default function Home() {
         </p>
         <Link
           to="/about"
-          className="mt-7 inline-flex rounded-full bg-[#b64d70] px-7 py-3 font-semibold text-white"
+          className="mt-7 inline-flex rounded-full bg-[#b64d70] hover:bg-[#c55c7f] transition-all px-7 py-3 font-semibold text-white"
         >
           Kenali Hanisy
         </Link>

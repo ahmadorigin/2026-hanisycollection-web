@@ -6,22 +6,6 @@ export const adminInputClass =
 export const adminPrimaryButtonClass =
   "inline-flex items-center justify-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
 
-export function AdminSectionHeading({ eyebrow, title, description }) {
-  return (
-    <div className="mb-5">
-      {eyebrow && (
-        <p className="text-xs font-semibold uppercase tracking-[.2em] text-[#b64d70]">
-          {eyebrow}
-        </p>
-      )}
-      <h2 className="mt-1 text-2xl font-bold text-brand-text">{title}</h2>
-      {description && (
-        <p className="mt-1 text-sm leading-6 text-brand-muted">{description}</p>
-      )}
-    </div>
-  );
-}
-
 export function AdminFormPanel({ children, className = "" }) {
   return (
     <div

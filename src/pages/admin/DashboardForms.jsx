@@ -4,7 +4,6 @@ import {
   AdminField,
   AdminFormPanel,
   AdminInput,
-  AdminSectionHeading,
   AdminTextarea,
   adminPrimaryButtonClass,
 } from "./AdminFormUI";
@@ -19,12 +18,6 @@ export function CategorySection({
 }) {
   return (
     <section className="mt-12">
-      <AdminSectionHeading
-        eyebrow="Pengaturan katalog"
-        title="Kategori Produk"
-        description="Kategori yang masih dipakai produk tidak dapat dihapus."
-      />
-
       <AdminFormPanel className="grid gap-5 md:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex flex-wrap content-start gap-2">
           {categories.map((category) => (
@@ -48,7 +41,10 @@ export function CategorySection({
           )}
         </div>
 
-        <form onSubmit={onSave} className="flex flex-col items-end gap-3 sm:flex-row">
+        <form
+          onSubmit={onSave}
+          className="flex flex-col items-end gap-3 sm:flex-row"
+        >
           <AdminField
             label="Nama kategori"
             htmlFor="dashboard-category-name"
@@ -90,12 +86,6 @@ export function TestimonialSection({
 }) {
   return (
     <section className="mt-12">
-      <AdminSectionHeading
-        eyebrow="Konten Beranda"
-        title="Testimoni Pelanggan"
-        description="Testimoni di sini akan tampil sebagai card berjalan perlahan di halaman Home."
-      />
-
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-3">
           {loading ? (
@@ -157,7 +147,10 @@ export function TestimonialSection({
               </p>
             </div>
 
-            <AdminField label="Nama pelanggan" htmlFor="testimonial-customer-name">
+            <AdminField
+              label="Nama pelanggan"
+              htmlFor="testimonial-customer-name"
+            >
               <AdminInput
                 id="testimonial-customer-name"
                 required
@@ -172,7 +165,10 @@ export function TestimonialSection({
               />
             </AdminField>
 
-            <AdminField label="Asal / kota" htmlFor="testimonial-customer-origin">
+            <AdminField
+              label="Asal / kota"
+              htmlFor="testimonial-customer-origin"
+            >
               <AdminInput
                 id="testimonial-customer-origin"
                 maxLength={100}

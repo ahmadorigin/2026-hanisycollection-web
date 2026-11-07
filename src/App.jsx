@@ -18,7 +18,10 @@ import Contact from "./pages/contact";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/admin/Login";
 import AdminLayout from "./pages/admin/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard";
+import DashboardOverview from "./pages/admin/DashboardOverview";
+import ProductsPage from "./pages/admin/ProductsPage";
+import CategoriesPage from "./pages/admin/CategoriesPage";
+import TestimonialsPage from "./pages/admin/TestimonialsPage";
 import ProductForm from "./pages/admin/ProductForm";
 
 const links = [
@@ -204,9 +207,12 @@ export default function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
+              <Route index element={<DashboardOverview />} />
+              <Route path="products" element={<ProductsPage />} />
               <Route path="products/new" element={<ProductForm />} />
               <Route path="products/edit/:id" element={<ProductForm />} />
+              <Route path="categories" element={<CategoriesPage />} />
+              <Route path="testimonials" element={<TestimonialsPage />} />
             </Route>
           </Route>
         </Routes>

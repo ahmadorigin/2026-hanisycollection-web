@@ -1,6 +1,25 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  NavLink,
+  Outlet,
+  Navigate,
+} from "react-router-dom";
 import { Menu, X, MessageCircle } from "lucide-react";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Home from "./pages/home";
+import Catalog from "./pages/catalog";
+import About from "./pages/about";
+import Contact from "./pages/contact";
+import NotFound from "./pages/NotFound";
+import Login from "./pages/admin/Login";
+import AdminLayout from "./pages/admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import ProductForm from "./pages/admin/ProductForm";
 
 const links = [
   ["Beranda", "/"],
@@ -163,4 +182,35 @@ function PublicLayout() {
   );
 }
 
-export default PublicLayout;
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route index element={<Home />} />
+            <Route path="collection" element={<Catalog />} />
+            <Route path="catalog" element={<Catalog />} />
+            <Route path="about" element={<About />} />
+            <Route path="contact" element={<Contact />} />
+            <Route
+              path="testimonial"
+              element={<Navigate to="/#testimonials" replace />}
+            />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+
+          <Route path="/admin/login" element={<Login />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="products/new" element={<ProductForm />} />
+              <Route path="products/edit/:id" element={<ProductForm />} />
+            </Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}

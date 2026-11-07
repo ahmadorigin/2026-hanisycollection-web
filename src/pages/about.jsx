@@ -34,9 +34,13 @@ export default function About() {
         </p>
       </section>
       <section className="mx-auto grid max-w-6xl gap-12 px-5 py-20 md:grid-cols-2 md:items-center">
-        <div className="min-h-90 overflow-hidden rounded-4xl bg-linear-to-br from-[#f2dce4] via-[#faf4f5] to-[#e8d5cc]">
-          <div className="flex h-full min-h-90 items-end p-8">
-            <p className="max-w-xs font-serif text-3xl leading-tight text-[#63394b]">
+        <div
+          className="relative min-h-90 overflow-hidden rounded-4xl bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/hanisy3.png')" }}
+        >
+          <div className="absolute inset-0 bg-black/25" />
+          <div className="relative z-10 flex min-h-90 items-end p-8">
+            <p className="max-w-xs font-serif text-3xl leading-tight text-white">
               Modest fashion, modern elegance.
             </p>
           </div>

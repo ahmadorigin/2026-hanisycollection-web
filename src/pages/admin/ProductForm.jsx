@@ -266,7 +266,7 @@ export default function ProductForm() {
             </div>
             <div>
               <label className="block text-sm font-medium">Foto Tampak Belakang</label>
-              {(backImageFile || existingBackImage) && <img src={backImageFile ? URL.createObjectURL(backImageFile) : existingBackImage} alt="Pratinjau tampak belakang" className="my-2 h-36 w-full rounded-xl border bg-gray-50 object-contain"/>
+              {(backImageFile || existingBackImage) && <img src={backImageFile ? URL.createObjectURL(backImageFile) : existingBackImage} alt="Pratinjau tampak belakang" className="my-2 h-36 w-full rounded-xl border bg-gray-50 object-contain"/
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setBackImageFile(e.target.files?.[0]||null)} className="mt-2 block w-full text-sm"/>
               {existingBackImage && <button type="button" onClick={()=>{setExistingBackImage("");setBackImageFile(null);}} className="mt-2 text-xs text-red-600">Hapus foto tampak belakang</button>}
               <p className="mt-1 text-xs text-gray-500">Opsional · JPG, PNG, WebP · maks. 2 MB</p>

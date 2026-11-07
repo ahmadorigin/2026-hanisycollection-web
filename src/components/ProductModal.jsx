@@ -22,13 +22,6 @@ export default function ProductModal({ product, onClose }) {
     .slice(0, 4);
 
   useEffect(() => {
-    setSize(product?.sizes?.[0] || "");
-    setColor(product?.colors?.[0] || "");
-    setActiveSlide(0);
-    setLightbox("");
-  }, [product?.id]);
-
-  useEffect(() => {
     const key = (event) => {
       if (event.key === "Escape") {
         if (lightbox) setLightbox("");

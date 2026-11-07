@@ -29,7 +29,7 @@ export default function ProductForm() {
   const [pageLoading, setPageLoading] = useState(isEdit);
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
-    name: "", category_id: "", price: "", description: "",
+    name: "", code: "", category_id: "", price: "", description: "",
     status: "ready_stock", stock: 0, sizes: [], colors: [], is_featured: false,
   });
   const [sizeInput, setSizeInput] = useState("");
@@ -53,7 +53,7 @@ export default function ProductForm() {
         if (error) alert("Gagal memuat produk: " + error.message);
         if (data) {
           setFormData({
-            name: data.name || "", category_id: data.category_id || "",
+            name: data.name || "", code: data.code || "", category_id: data.category_id || "",
             price: data.price ?? "", description: data.description || "",
             status: data.status || "ready_stock", stock: data.stock ?? 0,
             sizes: data.sizes || [], colors: data.colors || [],
@@ -88,6 +88,7 @@ export default function ProductForm() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!formData.name.trim()) return alert("Nama produk wajib diisi.");
+    if (!formData.code.trim()) return alert("Kode produk wajib diisi.");
     if (!formData.category_id) return alert("Silakan pilih kategori.");
     if (formData.price === "" || Number(formData.price) < 0 || !Number.isFinite(Number(formData.price))) return alert("Masukkan harga yang valid.");
     if (!isEdit && !mainImageFile) return alert("Foto utama produk wajib diunggah.");
@@ -120,6 +121,7 @@ export default function ProductForm() {
 
       const productPayload = {
         name: formData.name.trim(),
+        code: formData.code.trim(),
         category_id: formData.category_id,
         price: Number(formData.price),
         description: formData.description.trim(),
@@ -141,7 +143,11 @@ export default function ProductForm() {
         productError = result.error;
         productId = result.data?.id;
       }
-      if (productError) throw productError;
+      if (productError) {
+        if (productError.code === "23505") throw new Error("Kode produk sudah digunakan. Gunakan kode yang berbeda.");
+        if (productError.code === "23514") throw new Error("Kode produk tidak boleh kosong.");
+        throw productError;
+      }
       if (!productId) throw new Error("Produk tersimpan tanpa ID yang dapat dibaca.");
 
       for (const row of detailRows) {
@@ -179,7 +185,11 @@ export default function ProductForm() {
       <h1 className="mb-6 text-2xl font-bold text-brand-text">{isEdit ? "Edit Produk" : "Tambah Produk Baru"}</h1>
       <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <label className="block text-sm font-medium md:col-span-2">Nama Produk
+          <label className="block text-sm font-medium">Kode Produk
+            <input required maxLength={40} value={formData.code} onChange={e=>setFormData(v=>({...v,code:e.target.value}))} placeholder="Misal: HNS-001" className="mt-1 w-full rounded-xl border p-3"/>
+            <span className="mt-1 block text-xs font-normal text-gray-500">Kode harus unik dan digunakan sebagai identitas produk saat pemesanan.</span>
+          </label>
+          <label className="block text-sm font-medium">Nama Produk
             <input required maxLength={160} value={formData.name} onChange={e=>setFormData(v=>({...v,name:e.target.value}))} className="mt-1 w-full rounded-xl border p-3"/>
           </label>
           <label className="block text-sm font-medium">Kategori

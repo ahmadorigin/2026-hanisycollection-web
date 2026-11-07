@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://2026-hanisycollection-web.vercel.app/sitemap.xml

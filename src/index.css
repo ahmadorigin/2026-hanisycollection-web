@@ -9,3 +9,27 @@
 
   --font-sans: "Inter", system-ui, sans-serif;
 }
+
+@keyframes hanisy-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.hanisy-marquee-track {
+  animation: hanisy-marquee 7s linear infinite;
+}
+
+.group:hover .hanisy-marquee-track,
+.group:focus-within .hanisy-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hanisy-marquee-track {
+    animation: none !important;
+  }
+}

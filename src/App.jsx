@@ -1,60 +1,185 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  NavLink,
+  Outlet,
+  Navigate,
+} from "react-router-dom";
+import { Menu, X, MessageCircle } from "lucide-react";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-
-// Public Pages
 import Home from "./pages/home";
 import Catalog from "./pages/catalog";
-
-// Admin Pages
+import About from "./pages/about";
+import Contact from "./pages/contact";
+import NotFound from "./pages/NotFound";
 import Login from "./pages/admin/Login";
 import AdminLayout from "./pages/admin/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard";
+import DashboardOverview from "./pages/admin/DashboardOverview";
+import ProductsPage from "./pages/admin/ProductsPage";
+import CategoriesPage from "./pages/admin/CategoriesPage";
+import TestimonialsPage from "./pages/admin/TestimonialsPage";
 import ProductForm from "./pages/admin/ProductForm";
 
-// Layout Sederhana untuk Publik
-function PublicLayout({ children }) {
+const links = [
+  ["Beranda", "/"],
+  ["Collection", "/collection"],
+  ["About", "/about"],
+  ["Contact", "/contact"],
+];
+
+function PublicLayout() {
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col font-sans">
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <a
-            href="/"
-            className="text-2xl font-bold text-brand-primary tracking-tight"
+    <div className="min-h-screen bg-white text-[#30232a]">
+      <header
+        className={`sticky top-0 z-40 border-b transition-all ${
+          scrolled
+            ? "border-black/5 bg-white/95 shadow-sm backdrop-blur"
+            : "border-white/20 bg-white"
+        }`}
+      >
+        <div className="mx-auto flex h-19 max-w-7xl items-center justify-between px-5">
+          <Link
+            to="/"
+            aria-label="Hanisy Collection - Beranda"
+            className="flex items-center gap-3"
           >
-            Hanisy
-            <span className="text-brand-text font-light"> Collection</span>
-          </a>
-          <nav className="hidden md:flex gap-8">
-            <a
-              href="/"
-              className="text-brand-text hover:text-brand-primary font-medium transition-colors"
-            >
-              Beranda
-            </a>
-            <a
-              href="/catalog"
-              className="text-brand-text hover:text-brand-primary font-medium transition-colors"
-            >
-              Katalog
-            </a>
+            <span className="text-left leading-none">
+              <span className="block font-serif text-[1.35rem] tracking-[0.08em] text-[#301b26]">
+                HANISY
+              </span>
+              <span className="mt-1 block text-[0.6rem] font-sans tracking-[0.3em] text-[#b64d70]">
+                COLLECTION
+              </span>
+            </span>
+          </Link>
+
+          <nav className="hidden items-center gap-8 md:flex">
+            {links.map(([label, path]) => (
+              <NavLink
+                key={path}
+                to={path}
+                end={path === "/"}
+                className={({ isActive }) =>
+                  `text-sm transition hover:text-[#b64d70] ${
+                    isActive ? "font-semibold text-[#b64d70]" : "text-[#40343a]"
+                  }`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
           </nav>
+
+          <button
+            type="button"
+            aria-label={open ? "Tutup menu" : "Buka menu"}
+            aria-expanded={open}
+            aria-controls="public-mobile-menu"
+            onClick={() => setOpen((value) => !value)}
+            className="rounded-full p-2 md:hidden"
+          >
+            <span className="block transition-transform duration-200">
+              {open ? <X /> : <Menu />}
+            </span>
+          </button>
         </div>
+
+        <nav
+          id="public-mobile-menu"
+          aria-hidden={!open}
+          className={`overflow-hidden border-t border-[#f0e4e8] bg-white px-5 transition-[max-height,opacity,padding] duration-300 ease-in-out md:hidden ${
+            open
+              ? "max-h-72 py-4 opacity-100"
+              : "max-h-0 border-t-0 py-0 opacity-0"
+          }`}
+        >
+          <div className="grid gap-1">
+            {links.map(([label, path], index) => (
+              <Link
+                key={path}
+                tabIndex={open ? 0 : -1}
+                to={path}
+                onClick={() => setOpen(false)}
+                style={{
+                  transitionDelay: open ? `${index * 45}ms` : "0ms",
+                }}
+                className={`rounded-xl px-4 py-3 transition-all duration-200 hover:bg-[#fbf2f5] ${
+                  open
+                    ? "translate-y-0 opacity-100"
+                    : "-translate-y-2 opacity-0"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        </nav>
       </header>
 
-      <main className="grow">{children}</main>
+      <main>
+        <Outlet />
+      </main>
 
-      <footer className="bg-white border-t border-gray-100 py-8 text-center text-brand-muted text-sm">
-        <p>
-          &copy; {new Date().getFullYear()} Hanisy Collection. All rights
-          reserved.
-        </p>
-        <a
-          href="/admin"
-          className="text-gray-300 hover:text-brand-primary mt-2 inline-block transition-colors"
-        >
-          Admin Login
-        </a>
+      <footer className="bg-[#21191e] px-5 py-12 text-white">
+        <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-3">
+          <div>
+            <p className="font-serif text-2xl">HANISY COLLECTION</p>
+            <p className="mt-3 max-w-xs text-sm leading-6 text-white/60">
+              Modest fashion dengan sentuhan modern, anggun, dan nyaman untuk
+              keseharian.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-semibold">Jelajahi</p>
+            <div className="mt-4 grid gap-2 text-sm text-white/70">
+              {links.map(([label, path]) => (
+                <Link key={path} to={path} className="hover:text-white">
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="font-semibold">Ikuti perjalanan kami</p>
+            <a
+              href="https://wa.me/62895635913111"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-white/70 hover:text-white"
+            >
+              <MessageCircle size={17} /> WhatsApp Hanisy
+            </a>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-10 max-w-7xl border-t border-white/10 pt-6 text-xs text-white/45">
+          © {new Date().getFullYear()} Hanisy Collection. Hak cipta dilindungi.
+        </div>
       </footer>
     </div>
   );
@@ -65,33 +190,29 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
-          <Route
-            path="/"
-            element={
-              <PublicLayout>
-                <Home />
-              </PublicLayout>
-            }
-          />
-          <Route
-            path="/catalog"
-            element={
-              <PublicLayout>
-                <Catalog />
-              </PublicLayout>
-            }
-          />
+          <Route element={<PublicLayout />}>
+            <Route index element={<Home />} />
+            <Route path="collection" element={<Catalog />} />
+            <Route path="catalog" element={<Catalog />} />
+            <Route path="about" element={<About />} />
+            <Route path="contact" element={<Contact />} />
+            <Route
+              path="testimonial"
+              element={<Navigate to="/#testimonials" replace />}
+            />
+            <Route path="*" element={<NotFound />} />
+          </Route>
 
-          {/* Admin Login */}
           <Route path="/admin/login" element={<Login />} />
 
-          {/* Protected Admin Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
+              <Route index element={<DashboardOverview />} />
+              <Route path="products" element={<ProductsPage />} />
               <Route path="products/new" element={<ProductForm />} />
               <Route path="products/edit/:id" element={<ProductForm />} />
+              <Route path="categories" element={<CategoriesPage />} />
+              <Route path="testimonials" element={<TestimonialsPage />} />
             </Route>
           </Route>
         </Routes>

@@ -128,10 +128,15 @@ export default function AdminLayout() {
 
       <aside
         id="admin-mobile-sidebar"
-        className={`fixed bottom-0 left-0 top-16 z-50 flex w-[min(18rem,85vw)] flex-col border-r border-gray-200 bg-white shadow-xl transition-[transform,visibility] duration-300 ease-out md:sticky md:top-0 md:h-screen md:w-64 md:shrink-0 md:translate-x-0 md:shadow-none ${
+        style={{
+          transition: mobileOpen
+            ? "transform 300ms ease-out, visibility 0s"
+            : "transform 300ms ease-out, visibility 0s linear 300ms",
+        }}
+        className={`fixed bottom-0 left-0 top-16 z-50 flex w-[min(18rem,85vw)] flex-col border-r border-gray-200 bg-white shadow-xl transition-transform duration-300 ease-out md:sticky md:top-0 md:h-screen md:w-64 md:shrink-0 md:translate-x-0 md:shadow-none ${
           mobileOpen
-            ? "visible translate-x-0 delay-0"
-            : "invisible -translate-x-full delay-300 md:visible md:translate-x-0 md:delay-0"
+            ? "visible translate-x-0"
+            : "invisible -translate-x-full md:visible md:translate-x-0"
         }`}
       >
         {sidebarContent}

@@ -105,6 +105,8 @@ export default function ProductForm() {
     setLoading(true);
     try {
       validateFile(mainImageFile);
+      validateFile(frontImageFile);
+      validateFile(backImageFile);
       details.forEach(detail => validateFile(detail.file));
 
       let mainImageUrl = existingMainImage;

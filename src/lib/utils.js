@@ -19,6 +19,7 @@ export const generateWALink = (
 
   let message = `Halo Admin Hanisy Collection, saya ingin memesan:\n`;
   message += `- Produk: ${product.name}\n`;
+  message += `- Kode Produk: ${product.code}\n`;
   if (selectedColor) message += `- Warna: ${selectedColor}\n`;
   if (selectedSize) message += `- Ukuran: ${selectedSize}\n`;
   message += `- Harga: ${formatRupiah(product.price)}\n`;

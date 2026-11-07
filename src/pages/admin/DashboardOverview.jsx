@@ -8,7 +8,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useDashboardData } from "./hooks/useDashboardData";
-import { formatRupiah } from "../../../lib/utils";
+import { formatRupiah } from "../../lib/utils";
 import { AdminEmptyState } from "./AdminFormUI";
 
 function StatCard({ label, value, icon: Icon, tone }) {

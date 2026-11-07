@@ -3,7 +3,9 @@ import { Outlet, Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   LayoutDashboard,
-  PlusCircle,
+  Package,
+  Tags,
+  MessageSquareQuote,
   LogOut,
   ArrowLeft,
   Menu,
@@ -11,8 +13,10 @@ import {
 } from "lucide-react";
 
 const menuItems = [
-  { path: "/admin", label: "Daftar Produk", icon: LayoutDashboard, end: true },
-  { path: "/admin/products/new", label: "Tambah Produk", icon: PlusCircle, end: false },
+  { path: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { path: "/admin/products", label: "Produk", icon: Package, end: false },
+  { path: "/admin/categories", label: "Kategori", icon: Tags, end: false },
+  { path: "/admin/testimonials", label: "Testimoni", icon: MessageSquareQuote, end: false },
 ];
 
 export default function AdminLayout() {
